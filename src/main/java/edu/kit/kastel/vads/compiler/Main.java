@@ -32,7 +32,7 @@ public class Main {
             new SemanticAnalysis(program).analyze();
         } catch (SemanticException e) {
             e.printStackTrace();
-            System.exit(2);
+            System.exit(7);
             return;
         }
         List<IrGraph> graphs = new ArrayList<>();
@@ -44,6 +44,8 @@ public class Main {
         // TODO: generate assembly and invoke gcc instead of generating abstract assembly
         String s = new CodeGenerator().generateCode(graphs);
         Files.writeString(output, s);
+
+
     }
 
     private static ProgramTree lexAndParse(Path input) throws IOException {
@@ -54,7 +56,7 @@ public class Main {
             return parser.parseProgram();
         } catch (ParseException e) {
             e.printStackTrace();
-            System.exit(1);
+            System.exit(42);
             throw new AssertionError("unreachable");
         }
     }
