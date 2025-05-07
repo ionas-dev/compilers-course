@@ -1,6 +1,5 @@
-package edu.kit.kastel.vads.compiler.backend.asm;
+package edu.kit.kastel.vads.compiler.backend.x86_64;
 
-import edu.kit.kastel.vads.compiler.backend.aasm.AasmRegister;
 import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
 import edu.kit.kastel.vads.compiler.backend.regalloc.RegisterAllocator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
@@ -15,7 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AsmRegisterAllocator implements RegisterAllocator {
+public class x86_64RegisterAllocator implements RegisterAllocator {
 
 
     private int id = 8;
@@ -36,7 +35,7 @@ public class AsmRegisterAllocator implements RegisterAllocator {
             }
         }
         if (needsRegister(node)) {
-            this.registers.put(node, new AsmRegister(this.id++));
+            this.registers.put(node, new x86_64Register(this.id++));
         }
     }
 

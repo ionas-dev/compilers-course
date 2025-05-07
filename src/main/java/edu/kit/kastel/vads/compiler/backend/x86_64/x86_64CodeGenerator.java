@@ -1,6 +1,5 @@
-package edu.kit.kastel.vads.compiler.backend.asm;
+package edu.kit.kastel.vads.compiler.backend.x86_64;
 
-import edu.kit.kastel.vads.compiler.backend.aasm.AasmRegisterAllocator;
 import edu.kit.kastel.vads.compiler.backend.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
 import edu.kit.kastel.vads.compiler.backend.regalloc.RegisterAllocator;
@@ -27,14 +26,14 @@ import java.util.StringJoiner;
 
 import static edu.kit.kastel.vads.compiler.ir.util.NodeSupport.predecessorSkipProj;
 
-public class AsmCodeGenerator implements CodeGenerator {
+public class x86_64CodeGenerator implements CodeGenerator {
 
     public String generateCode(List<IrGraph> program) {
         StringBuilder builder = new StringBuilder();
         generateAsmTemplate(builder);
 
         for (IrGraph graph : program) {
-            RegisterAllocator allocator = new AsmRegisterAllocator();
+            RegisterAllocator allocator = new x86_64RegisterAllocator();
             Map<Node, Register> registers = allocator.allocateRegisters(graph);
             builder.repeat("\n", 2).append("_")
                     .append(graph.name())
