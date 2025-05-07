@@ -3,6 +3,7 @@ package edu.kit.kastel.vads.compiler.backend.asm;
 import edu.kit.kastel.vads.compiler.backend.aasm.AasmRegisterAllocator;
 import edu.kit.kastel.vads.compiler.backend.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
+import edu.kit.kastel.vads.compiler.backend.regalloc.RegisterAllocator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.node.AddNode;
 import edu.kit.kastel.vads.compiler.ir.node.BinaryOperationNode;
@@ -33,7 +34,7 @@ public class AsmCodeGenerator implements CodeGenerator {
         generateAsmTemplate(builder);
 
         for (IrGraph graph : program) {
-            AasmRegisterAllocator allocator = new AasmRegisterAllocator();
+            RegisterAllocator allocator = new AsmRegisterAllocator();
             Map<Node, Register> registers = allocator.allocateRegisters(graph);
             builder.repeat("\n", 2).append("_")
                     .append(graph.name())
@@ -80,7 +81,8 @@ public class AsmCodeGenerator implements CodeGenerator {
             case ReturnNode r -> builder.repeat(" ", 2).append("movl ")
                 .append(registers.get(predecessorSkipProj(r, ReturnNode.RESULT)))
                 .append(", ")
-                .append("%rax");
+                .append("%eax\n")
+                .append("  ret");
             case ConstIntNode c -> builder.repeat(" ", 2)
                 .append("movl $")
                 .append(c.value())
