@@ -73,10 +73,13 @@ public class Main {
     }
 
     private static int compileMachineCode(Path inputPath, Path outputPath) throws InterruptedException, IOException {
-        String archPrefix = isARM() ? "arch -x86_64" : "";
-
         StringJoiner commandBuilder = new StringJoiner(" ");
-        commandBuilder.add(archPrefix)
+
+        if (isARM()) {
+            commandBuilder.add("arch -x86_64");
+        }
+
+        commandBuilder
                 .add("gcc")
                 .add(inputPath.toAbsolutePath().toString())
                 .add("-o")
