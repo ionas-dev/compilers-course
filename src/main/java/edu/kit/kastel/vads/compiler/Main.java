@@ -1,6 +1,8 @@
 package edu.kit.kastel.vads.compiler;
 
-import edu.kit.kastel.vads.compiler.backend.aasm.CodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.aasm.AasmCodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.asm.AsmCodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
@@ -17,10 +19,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length != 2) {
             System.err.println("Invalid arguments: Expected one input file and one output file");
             System.exit(3);
@@ -41,11 +46,18 @@ public class Main {
             graphs.add(translation.translate());
         }
 
-        // TODO: generate assembly and invoke gcc instead of generating abstract assembly
-        String s = new CodeGenerator().generateCode(graphs);
-        Files.writeString(output, s);
+        CodeGenerator generator = new AsmCodeGenerator();
+        String s = generator.generateCode(graphs);
+        Path asmOutput = Path.of(output + ".s");
+        Files.writeString(asmOutput, s);
+        println("Generated asm file: ", asmOutput.toAbsolutePath().toString());
 
-
+        int exitValue = compileMachineCode(asmOutput, output);
+        if (exitValue != 0) {
+            // TODO: Throw more meaningful exception
+            throw new RuntimeException("Compilation failed");
+        }
+        println("Compiled to: ", output.toAbsolutePath().toString());
     }
 
     private static ProgramTree lexAndParse(Path input) throws IOException {
@@ -59,5 +71,42 @@ public class Main {
             System.exit(42);
             throw new AssertionError("unreachable");
         }
+    }
+
+    private static int compileMachineCode(Path inputPath, Path outputPath) throws InterruptedException, IOException {
+        String archPrefix = isARM() ? "arch -x86_64" : "";
+
+        StringJoiner commandBuilder = new StringJoiner(" ");
+        commandBuilder.add(archPrefix)
+                .add("gcc")
+                .add(inputPath.toAbsolutePath().toString())
+                .add("-o")
+                .add(outputPath.toAbsolutePath().toString());
+
+        String command = commandBuilder.toString();
+        ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+        processBuilder.inheritIO();
+
+        println("Execute process: ", command);
+        Process process = processBuilder.start();
+        process.waitFor();
+        return process.exitValue();
+    }
+
+    private static boolean isARM() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String arch = System.getProperty("os.arch").toLowerCase();
+
+        if (os.contains("mac") && arch.equals("aarch64")) {
+            println("MacOSX with ARM architecture detected");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void println(String... string) {
+        String output = Arrays.stream(string).collect(Collectors.joining());
+        System.out.println("L1C: " + output);
     }
 }
