@@ -5,7 +5,7 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 
 import java.util.Map;
 
-public interface RegisterAllocator {
+public interface IRegisterAllocator {
 
     Map<Node, Register> allocateRegisters(IrGraph graph);
 }

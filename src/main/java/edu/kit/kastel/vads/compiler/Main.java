@@ -1,7 +1,7 @@
 package edu.kit.kastel.vads.compiler;
 
-import edu.kit.kastel.vads.compiler.backend.x86_64.x86_64CodeGenerator;
-import edu.kit.kastel.vads.compiler.backend.codegen.CodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.codegen.ICodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
@@ -45,7 +45,7 @@ public class Main {
             graphs.add(translation.translate());
         }
 
-        CodeGenerator generator = new x86_64CodeGenerator();
+        ICodeGenerator generator = new CodeGenerator();
         String s = generator.generateCode(graphs);
         Path asmOutput = Path.of(output + ".s");
         Files.writeString(asmOutput, s);

@@ -1,7 +1,6 @@
-package edu.kit.kastel.vads.compiler.backend.aasm;
+package edu.kit.kastel.vads.compiler.backend.regalloc;
 
-import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
-import edu.kit.kastel.vads.compiler.backend.regalloc.RegisterAllocator;
+import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.node.Block;
 import edu.kit.kastel.vads.compiler.ir.node.Node;
@@ -14,8 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AasmRegisterAllocator implements RegisterAllocator {
-    private int id;
+public class VirtualRegisterAllocator implements IRegisterAllocator {
     private final Map<Node, Register> registers = new HashMap<>();
 
     @Override
@@ -32,8 +30,10 @@ public class AasmRegisterAllocator implements RegisterAllocator {
                 scan(predecessor, visited);
             }
         }
+
         if (needsRegister(node)) {
-            this.registers.put(node, new AasmRegister(this.id++));
+            // TODO: Size richtig setzen
+            this.registers.put(node, new VirtualRegister(BitSize.BIT32));
         }
     }
 

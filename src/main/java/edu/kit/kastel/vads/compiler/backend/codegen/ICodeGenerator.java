@@ -4,6 +4,6 @@ import edu.kit.kastel.vads.compiler.ir.IrGraph;
 
 import java.util.List;
 
-public interface CodeGenerator {
+public interface ICodeGenerator {
     String generateCode(List<IrGraph> program);
 }
