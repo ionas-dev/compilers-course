@@ -12,4 +12,14 @@ public record ConstInstructionTarget(int value) implements InstructionTarget {
     public BitSize size() {
         return BitSize.BIT32;
     }
+
+    @Override
+    public int hashCode() {
+        return ConstInstructionTarget.class.hashCode() + Integer.hashCode(value) + size().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this.getClass().equals(obj.getClass()) && this.hashCode() == obj.hashCode();
+    }
 }

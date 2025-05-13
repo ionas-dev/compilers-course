@@ -8,12 +8,15 @@ public abstract class Register implements InstructionTarget {
     private final BitSize size;
 
     public Register(BitSize size) {
-        assert size != null : "Size must not be null";
-
         this.size = size;
     }
 
     public BitSize size() {
         return size;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this.getClass().equals(obj.getClass()) && this.hashCode() == obj.hashCode();
     }
 }

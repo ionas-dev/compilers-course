@@ -15,4 +15,9 @@ public class VirtualRegister extends Register {
     public String toCode() {
         return "%" + id;
     }
+
+    @Override
+    public int hashCode() {
+        return VirtualRegister.class.hashCode() + Integer.hashCode(id);
+    }
 }

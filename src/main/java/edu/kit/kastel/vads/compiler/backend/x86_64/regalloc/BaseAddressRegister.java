@@ -18,4 +18,9 @@ public class BaseAddressRegister extends Register {
             case BIT64 -> "%rdx";
         };
     }
+
+    @Override
+    public int hashCode() {
+        return BaseAddressRegister.class.hashCode() + size().hashCode();
+    }
 }

@@ -59,6 +59,7 @@ public class InstructionSelector implements IInstructionSelector {
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), new ReturnRegister(BitSize.BIT32)));
                 instructions.add(new SignExtendInstruction());
                 instructions.add(new SignedDivInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT))));
+                // TODO: Delete sometimes redundant move instructions (same with mode)
                 instructions.add(new MoveInstruction(new ReturnRegister(BitSize.BIT32), registers.get(node)));
             }
             case ModNode _ -> {
