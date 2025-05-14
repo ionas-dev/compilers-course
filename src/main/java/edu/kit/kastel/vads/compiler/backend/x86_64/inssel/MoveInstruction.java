@@ -3,12 +3,11 @@ package edu.kit.kastel.vads.compiler.backend.x86_64.inssel;
 import edu.kit.kastel.vads.compiler.backend.inssel.Instruction;
 import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
 import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
+import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 
-public record MoveInstruction(InstructionTarget source, InstructionTarget target) implements Instruction {
+public record MoveInstruction(InstructionTarget source, IRegister target, BitSize size) implements Instruction {
 
     private String suffix() {
-        BitSize size = source.size().value() > target.size().value() ? source.size() : target.size();
-
         return switch (size) {
             case BIT8 -> "b";
             case BIT16 -> "w";
@@ -19,6 +18,6 @@ public record MoveInstruction(InstructionTarget source, InstructionTarget target
 
     @Override
     public String toCode() {
-        return "mov" + suffix() + " " + source.toCode() + ", " + target.toCode();
+        return "mov" + suffix() + " " + source.toCode(size) + ", " + target.toCode(size);
     }
 }

@@ -1,18 +1,17 @@
 package edu.kit.kastel.vads.compiler.backend.x86_64.codegen;
 
 import edu.kit.kastel.vads.compiler.backend.codegen.ICodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
 import edu.kit.kastel.vads.compiler.backend.inssel.Instruction;
 import edu.kit.kastel.vads.compiler.backend.inssel.IInstructionSelector;
-import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
+import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.InstructionSelector;
-import edu.kit.kastel.vads.compiler.backend.x86_64.liveness.LivenessAnalyzer;
+import edu.kit.kastel.vads.compiler.backend.x86_64.regalloc.Register;
+import edu.kit.kastel.vads.compiler.backend.x86_64.regalloc.RegisterAllocator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CodeGenerator implements ICodeGenerator {
@@ -39,9 +38,8 @@ public class CodeGenerator implements ICodeGenerator {
             instructions.addAll(instructionSelector.transform(graph));
         }
 
-        LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
-        Map<Integer, Set<InstructionTarget>> liveIn = livenessAnalyzer.execute(new LinkedList<>(instructions));
-
+        RegisterAllocator allocator = new RegisterAllocator();
+        instructions = allocator.allocateRegisters(instructions);
 
         return instructions.stream().map(Instruction::toCode).collect(Collectors.joining("\n"));
     }

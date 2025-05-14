@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class VirtualRegisterAllocator implements IRegisterAllocator {
-    private final Map<Node, Register> registers = new HashMap<>();
+    private final Map<Node, IRegister> registers = new HashMap<>();
 
     @Override
-    public Map<Node, Register> allocateRegisters(IrGraph graph) {
+    public Map<Node, IRegister> allocateRegisters(IrGraph graph) {
         Set<Node> visited = new HashSet<>();
         visited.add(graph.endBlock());
         scan(graph.endBlock(), visited);
@@ -33,7 +33,7 @@ public class VirtualRegisterAllocator implements IRegisterAllocator {
 
         if (needsRegister(node)) {
             // TODO: Size richtig setzen
-            this.registers.put(node, new VirtualRegister(BitSize.BIT32));
+            this.registers.put(node, new VirtualRegister());
         }
     }
 

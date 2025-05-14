@@ -4,18 +4,13 @@ package edu.kit.kastel.vads.compiler.backend.inssel;
 public record ConstInstructionTarget(int value) implements InstructionTarget {
 
     @Override
-    public String toCode() {
+    public String toCode(BitSize size) {
         return "$" + value;
     }
 
     @Override
-    public BitSize size() {
-        return BitSize.BIT32;
-    }
-
-    @Override
     public int hashCode() {
-        return ConstInstructionTarget.class.hashCode() + Integer.hashCode(value) + size().hashCode();
+        return ConstInstructionTarget.class.hashCode() + Integer.hashCode(value);
     }
 
     @Override

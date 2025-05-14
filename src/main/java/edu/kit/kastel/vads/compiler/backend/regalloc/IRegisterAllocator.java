@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface IRegisterAllocator {
 
-    Map<Node, Register> allocateRegisters(IrGraph graph);
+    Map<Node, IRegister> allocateRegisters(IrGraph graph);
 }
