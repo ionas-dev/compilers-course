@@ -5,6 +5,7 @@ import edu.kit.kastel.vads.compiler.backend.liveness.ILivenessAnalyzer;
 import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.BinaryOperationInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MoveInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MultiplyInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.ReturnInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.SignExtendInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.SignedDivisionInstruction;
@@ -46,7 +47,11 @@ public class LivenessAnalyzer implements ILivenessAnalyzer {
                     gen(index, Register.ACCUMULATOR);
                     gen(index, source);
                 }
-                case SignedDivisionInstruction _, ReturnInstruction _ -> gen(index, Register.ACCUMULATOR);
+                case MultiplyInstruction(IRegister source, _) -> {
+                    gen(index, Register.ACCUMULATOR);
+                    gen(index, source);
+                }
+                case SignedDivisionInstruction _, MultiplyInstruction _, ReturnInstruction _ -> gen(index, Register.ACCUMULATOR);
                 default -> {}
             }
 

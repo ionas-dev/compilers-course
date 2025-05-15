@@ -7,6 +7,7 @@ import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 import edu.kit.kastel.vads.compiler.backend.regalloc.VirtualRegister;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.BinaryOperationInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MoveInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MultiplyInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.SignedDivisionInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.liveness.LivenessAnalyzer;
 
@@ -65,6 +66,11 @@ public class RegisterAllocator {
                     Integer sourceColor = coloredNodes.get(source);
 
                     validInstructions.add(new SignedDivisionInstruction(registers.get(sourceColor), size));
+                }
+                case MultiplyInstruction(VirtualRegister source, BitSize size) -> {
+                    Integer sourceColor = coloredNodes.get(source);
+
+                    validInstructions.add(new MultiplyInstruction(registers.get(sourceColor), size));
                 }
                 default -> validInstructions.add(instruction);
             }

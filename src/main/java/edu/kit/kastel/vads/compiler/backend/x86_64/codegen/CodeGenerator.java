@@ -44,7 +44,6 @@ public class CodeGenerator implements ICodeGenerator {
         return allocator.allocateRegisters(instructions).stream()
                 .filter(instruction -> switch(instruction) {
                     case MoveInstruction(IRegister source, IRegister target, _) -> !source.equals(target);
-                    case BinaryOperationInstruction(IRegister source, IRegister target, _, _) -> !source.equals(target);
                     default -> true;
                 })
                 .map(Instruction::toCode)

@@ -48,20 +48,22 @@ public class InstructionSelector implements IInstructionSelector {
             }
         }
 
+        // TODO: Exchange hard-coded size
         switch (node) {
             case AddNode addNode -> binary(instructions, registers, addNode, BinaryOperationInstruction.Operation.ADD);
             case SubNode subNode -> binary(instructions, registers, subNode, BinaryOperationInstruction.Operation.SUB);
-            case MulNode mulNode -> binary(instructions, registers, mulNode, BinaryOperationInstruction.Operation.MUL);
+            case MulNode _ -> {
+                instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
+                instructions.add(new MultiplyInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
+                instructions.add(new MoveInstruction(Register.ACCUMULATOR, registers.get(node), BitSize.BIT32));
+            }
             case DivNode _ -> {
-                // TODO: Exchange hard-coded size
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new SignExtendInstruction());
                 instructions.add(new SignedDivisionInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
-                // TODO: Delete sometimes redundant move instructions (same with mode)
                 instructions.add(new MoveInstruction(Register.ACCUMULATOR, registers.get(node), BitSize.BIT32));
             }
             case ModNode _ -> {
-                // TODO: Exchange hard-coded size
                 // TODO: Extract this and DivNode case
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new SignExtendInstruction());
@@ -69,7 +71,6 @@ public class InstructionSelector implements IInstructionSelector {
                 instructions.add(new MoveInstruction(Register.BASE, registers.get(node), BitSize.BIT32));
             }
             case ReturnNode _ -> {
-                // TODO: Exchange hard-coded size
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, ReturnNode.RESULT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new ReturnInstruction());
             }

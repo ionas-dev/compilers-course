@@ -13,8 +13,7 @@ public record BinaryOperationInstruction(InstructionTarget source, IRegister tar
 
     public enum Operation {
         ADD("add"),
-        SUB("sub"),
-        MUL("mul");
+        SUB("sub");
 
         private final String value;
 
