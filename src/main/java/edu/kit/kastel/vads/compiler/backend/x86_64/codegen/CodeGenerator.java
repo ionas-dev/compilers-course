@@ -5,7 +5,9 @@ import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
 import edu.kit.kastel.vads.compiler.backend.inssel.Instruction;
 import edu.kit.kastel.vads.compiler.backend.inssel.IInstructionSelector;
 import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
+import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.BinaryOperationInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.InstructionSelector;
+import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MoveInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.regalloc.Register;
 import edu.kit.kastel.vads.compiler.backend.x86_64.regalloc.RegisterAllocator;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
@@ -39,8 +41,13 @@ public class CodeGenerator implements ICodeGenerator {
         }
 
         RegisterAllocator allocator = new RegisterAllocator();
-        instructions = allocator.allocateRegisters(instructions);
-
-        return instructions.stream().map(Instruction::toCode).collect(Collectors.joining("\n"));
+        return allocator.allocateRegisters(instructions).stream()
+                .filter(instruction -> switch(instruction) {
+                    case MoveInstruction(IRegister source, IRegister target, _) -> !source.equals(target);
+                    case BinaryOperationInstruction(IRegister source, IRegister target, _, _) -> !source.equals(target);
+                    default -> true;
+                })
+                .map(Instruction::toCode)
+                .collect(Collectors.joining("\n"));
     }
 }
