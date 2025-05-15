@@ -5,5 +5,5 @@ import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import java.util.List;
 
 public interface ICodeGenerator {
-    String generateCode(List<IrGraph> program);
+    String generateCode(List<IrGraph> program) throws UnsupportedOperationException;
 }

@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface IInstructionSelector {
 
-    List<Instruction> transform(IrGraph irGraph);
+    List<Instruction> transform(IrGraph irGraph) throws UnsupportedOperationException;
 }

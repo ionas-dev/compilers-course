@@ -44,38 +44,49 @@ public class RegisterAllocator {
             switch (instruction) {
                 case BinaryOperationInstruction binaryOperationInstruction -> {
                     InstructionTarget source = binaryOperationInstruction.source() instanceof VirtualRegister
-                            ? registers.get(coloredNodes.get(binaryOperationInstruction.source()))
+                            ? findRealRegister((VirtualRegister) binaryOperationInstruction.source(), coloredNodes)
                             : binaryOperationInstruction.source();
                     IRegister target = binaryOperationInstruction.target() instanceof VirtualRegister
-                            ? registers.get(coloredNodes.get(binaryOperationInstruction.target()))
+                            ? findRealRegister((VirtualRegister) binaryOperationInstruction.target(), coloredNodes)
                             : binaryOperationInstruction.target();
 
                     validInstructions.add(new BinaryOperationInstruction(source, target, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
                 }
                 case MoveInstruction moveInstruction -> {
                     InstructionTarget source = moveInstruction.source() instanceof VirtualRegister
-                            ? registers.get(coloredNodes.get(moveInstruction.source()))
+                            ? findRealRegister((VirtualRegister) moveInstruction.source(), coloredNodes)
                             : moveInstruction.source();
                     IRegister target = moveInstruction.target() instanceof VirtualRegister
-                            ? registers.get(coloredNodes.get(moveInstruction.target()))
+                            ? findRealRegister((VirtualRegister) moveInstruction.target(), coloredNodes)
                             : moveInstruction.target();
 
                     validInstructions.add(new MoveInstruction(source, target, moveInstruction.size()));
                 }
                 case SignedDivisionInstruction(VirtualRegister source, BitSize size) -> {
-                    Integer sourceColor = coloredNodes.get(source);
+                    IRegister register = findRealRegister(source, coloredNodes);
 
-                    validInstructions.add(new SignedDivisionInstruction(registers.get(sourceColor), size));
+                    validInstructions.add(new SignedDivisionInstruction(register, size));
                 }
                 case MultiplyInstruction(VirtualRegister source, BitSize size) -> {
-                    Integer sourceColor = coloredNodes.get(source);
+                    IRegister register = findRealRegister(source, coloredNodes);
 
-                    validInstructions.add(new MultiplyInstruction(registers.get(sourceColor), size));
+                    validInstructions.add(new MultiplyInstruction(register, size));
                 }
                 default -> validInstructions.add(instruction);
             }
         }
         return validInstructions;
+    }
+
+    private Register findRealRegister(VirtualRegister register, Map<IRegister, Integer> coloredNodes) {
+        Integer color = coloredNodes.get(register);
+        if (color != null) {
+            assert registers.containsKey(color) : "Implementation error";
+            return registers.get(color);
+        } else if (registers.isEmpty() && availableRegisters.stream().findFirst().isPresent()) {
+            return availableRegisters.stream().findFirst().get();
+        }
+        return registers.get(0);
     }
 
     private Map<IRegister, Integer> colorNodes(List<Node<IRegister>> nodes) {
@@ -95,7 +106,7 @@ public class RegisterAllocator {
             Integer color = coloredNodes.get(node.getValue());
             if (!registers.containsKey(color)) {
                 // TODO: Register spilling fixen
-                Register availableRegister = availableRegisters.stream().findAny().get();
+                Register availableRegister = availableRegisters.stream().findFirst().get();
                 registers.put(color, availableRegister);
                 availableRegisters.remove(availableRegister);
             }

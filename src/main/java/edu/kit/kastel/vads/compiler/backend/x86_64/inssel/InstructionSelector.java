@@ -30,7 +30,7 @@ import static edu.kit.kastel.vads.compiler.ir.util.NodeSupport.predecessorSkipPr
 public class InstructionSelector implements IInstructionSelector {
 
     @Override
-    public List<Instruction> transform(IrGraph graph) {
+    public List<Instruction> transform(IrGraph graph) throws UnsupportedOperationException {
         List<Instruction> instructions = new ArrayList<>();
         instructions.add(() -> "_" + graph.name() + ":");
 
@@ -41,7 +41,9 @@ public class InstructionSelector implements IInstructionSelector {
         return instructions;
     }
 
-    private void scan(Node node, Set<Node> visited, List<Instruction> instructions, Map<Node, IRegister> registers) {
+    private void scan(Node node, Set<Node> visited, List<Instruction> instructions, Map<Node, IRegister> registers)
+            throws UnsupportedOperationException
+    {
         for (Node predecessor : node.predecessors()) {
             if (visited.add(predecessor)) {
                 scan(predecessor, visited, instructions, registers);
@@ -74,8 +76,9 @@ public class InstructionSelector implements IInstructionSelector {
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, ReturnNode.RESULT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new ReturnInstruction());
             }
-            case ConstIntNode constNode -> instructions.add(new MoveInstruction(new ConstInstructionTarget(constNode.value()), registers.get(constNode), BitSize.BIT32));
-            case Phi _ -> throw new UnsupportedOperationException("phi");
+            case ConstIntNode constNode ->
+                    instructions.add(new MoveInstruction(new ConstInstructionTarget(constNode.value()), registers.get(constNode), BitSize.BIT32));
+            case Phi _ -> throw new UnsupportedOperationException(node.toString());
             default -> {}
         }
     }

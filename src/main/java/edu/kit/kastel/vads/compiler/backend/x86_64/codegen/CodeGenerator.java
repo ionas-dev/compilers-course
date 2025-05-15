@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class CodeGenerator implements ICodeGenerator {
 
     @Override
-    public String generateCode(List<IrGraph> program) {
+    public String generateCode(List<IrGraph> program) throws UnsupportedOperationException {
         IInstructionSelector instructionSelector = new InstructionSelector();
 
         List<Instruction> instructions = new ArrayList<>(List.of(
@@ -42,10 +42,7 @@ public class CodeGenerator implements ICodeGenerator {
 
         RegisterAllocator allocator = new RegisterAllocator();
         return allocator.allocateRegisters(instructions).stream()
-                .filter(instruction -> switch(instruction) {
-                    case MoveInstruction(IRegister source, IRegister target, _) -> !source.equals(target);
-                    default -> true;
-                })
+                .filter(instruction -> !(instruction instanceof MoveInstruction) || !((MoveInstruction) instruction).source().equals(((MoveInstruction) instruction).target()))
                 .map(Instruction::toCode)
                 .collect(Collectors.joining("\n"));
     }

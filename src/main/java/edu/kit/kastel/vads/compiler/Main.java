@@ -33,6 +33,7 @@ public class Main {
         Path output = Path.of(args[1]);
         ProgramTree program = lexAndParse(input);
         try {
+            // TODO: Should probably recognize semantic error for test:use-uninitialized-variable
             new SemanticAnalysis(program).analyze();
         } catch (SemanticException e) {
             e.printStackTrace();
@@ -46,15 +47,21 @@ public class Main {
         }
 
         ICodeGenerator generator = new CodeGenerator();
-        String s = generator.generateCode(graphs);
-        Path asmOutput = Path.of(output + ".s");
-        Files.writeString(asmOutput, s);
-        println("Generated asm file: ", asmOutput.toAbsolutePath().toString());
+        try {
+            String s = generator.generateCode(graphs);
+            Path asmOutput = Path.of(output + ".s");
+            Files.writeString(asmOutput, s);
+            println("Generated asm file: ", asmOutput.toAbsolutePath().toString());
 
-        int exitValue = compileMachineCode(asmOutput, output);
-        if (exitValue != 0) {
-            // TODO: Throw more meaningful exception
-            throw new RuntimeException("Compilation failed");
+            int exitValue = compileMachineCode(asmOutput, output);
+            if (exitValue != 0) {
+                // TODO: Throw more meaningful exception
+                throw new RuntimeException("Compilation failed");
+            }
+        } catch (UnsupportedOperationException e) {
+            e.printStackTrace();
+            System.exit(7);
+            return;
         }
         println("Compiled to: ", output.toAbsolutePath().toString());
     }
