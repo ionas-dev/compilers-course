@@ -35,7 +35,7 @@ public enum Register implements IRegister {
 
     @Override
     public String toCode(BitSize size) {
-        return switch (size) {
+        return "%" + switch (size) {
             case BIT64 -> bit64;
             case BIT32 -> bit32;
             case BIT16 -> bit16;
