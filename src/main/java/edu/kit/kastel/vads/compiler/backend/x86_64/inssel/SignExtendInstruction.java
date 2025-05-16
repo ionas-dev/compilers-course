@@ -6,7 +6,7 @@ public class SignExtendInstruction implements Instruction {
 
     @Override
     public String toCode() {
-        return "cltd";
+        return "cdq";
     }
 
 }

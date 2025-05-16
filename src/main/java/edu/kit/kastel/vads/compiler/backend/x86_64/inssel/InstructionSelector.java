@@ -70,7 +70,7 @@ public class InstructionSelector implements IInstructionSelector {
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new SignExtendInstruction());
                 instructions.add(new SignedDivisionInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
-                instructions.add(new MoveInstruction(Register.BASE, registers.get(node), BitSize.BIT32));
+                instructions.add(new MoveInstruction(Register.DATA, registers.get(node), BitSize.BIT32));
             }
             case ReturnNode _ -> {
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, ReturnNode.RESULT)), Register.ACCUMULATOR, BitSize.BIT32));
