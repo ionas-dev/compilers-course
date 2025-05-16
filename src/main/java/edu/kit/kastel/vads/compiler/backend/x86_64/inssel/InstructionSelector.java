@@ -55,29 +55,36 @@ public class InstructionSelector implements IInstructionSelector {
             case AddNode addNode -> binary(instructions, registers, addNode, BinaryOperationInstruction.Operation.ADD);
             case SubNode subNode -> binary(instructions, registers, subNode, BinaryOperationInstruction.Operation.SUB);
             case MulNode _ -> {
+                instructions.add(new MoveInstruction(Register.DATA, registers.get(node), BitSize.BIT32));
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new MultiplyInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
+                instructions.add(new MoveInstruction(registers.get(node), Register.DATA, BitSize.BIT32));
                 instructions.add(new MoveInstruction(Register.ACCUMULATOR, registers.get(node), BitSize.BIT32));
             }
             case DivNode _ -> {
+                instructions.add(new MoveInstruction(Register.DATA, registers.get(node), BitSize.BIT32));
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new SignExtendInstruction());
                 instructions.add(new SignedDivisionInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
+                instructions.add(new MoveInstruction(registers.get(node), Register.DATA, BitSize.BIT32));
                 instructions.add(new MoveInstruction(Register.ACCUMULATOR, registers.get(node), BitSize.BIT32));
             }
             case ModNode _ -> {
                 // TODO: Extract this and DivNode case
+                // TODO: Reduce unnecessary instructions
+                instructions.add(new MoveInstruction(Register.DATA, registers.get(node), BitSize.BIT32));
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.LEFT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new SignExtendInstruction());
                 instructions.add(new SignedDivisionInstruction(registers.get(predecessorSkipProj(node, BinaryOperationNode.RIGHT)), BitSize.BIT32));
-                instructions.add(new MoveInstruction(Register.DATA, registers.get(node), BitSize.BIT32));
+                instructions.add(new MoveInstruction(Register.DATA, Register.ACCUMULATOR, BitSize.BIT32));
+                instructions.add(new MoveInstruction(registers.get(node), Register.DATA, BitSize.BIT32));
+                instructions.add(new MoveInstruction(Register.ACCUMULATOR, registers.get(node), BitSize.BIT32));
             }
             case ReturnNode _ -> {
                 instructions.add(new MoveInstruction(registers.get(predecessorSkipProj(node, ReturnNode.RESULT)), Register.ACCUMULATOR, BitSize.BIT32));
                 instructions.add(new ReturnInstruction());
             }
-            case ConstIntNode constNode ->
-                    instructions.add(new MoveInstruction(new ConstInstructionTarget(constNode.value()), registers.get(constNode), BitSize.BIT32));
+            case ConstIntNode constNode -> instructions.add(new MoveInstruction(new ConstInstructionTarget(constNode.value()), registers.get(constNode), BitSize.BIT32));
             case Phi _ -> throw new UnsupportedOperationException(node.toString());
             default -> {}
         }
