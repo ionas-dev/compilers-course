@@ -7,8 +7,15 @@ import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 
 public record BinaryOperationInstruction(InstructionTarget source, IRegister target, Operation operation, BitSize size) implements Instruction {
     @Override
-    public String toCode() {
-        return operation + " " + source.toCode(size) + ", " + target.toCode(size);
+    public String toCode() { return operation + suffix() + " " + source.toCode(size) + ", " + target.toCode(size); }
+
+    private String suffix() {
+        return switch (size) {
+            case BIT8 -> "b";
+            case BIT16 -> "w";
+            case BIT32 -> "l";
+            case BIT64 -> "q";
+        };
     }
 
     public enum Operation {

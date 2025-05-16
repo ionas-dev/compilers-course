@@ -6,8 +6,17 @@ import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
 
 public record SignedDivisionInstruction(InstructionTarget source, BitSize size) implements Instruction {
 
+    private String suffix() {
+        return switch (size) {
+            case BIT8 -> "b";
+            case BIT16 -> "w";
+            case BIT32 -> "l";
+            case BIT64 -> "q";
+        };
+    }
+
     @Override
     public String toCode() {
-        return "idivl " + source.toCode(size);
+        return "idiv" + suffix() + " " + source.toCode(size);
     }
 }

@@ -7,6 +7,15 @@ import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
 public record MultiplyInstruction(InstructionTarget source, BitSize size) implements Instruction {
     @Override
     public String toCode() {
-        return "mul " + source.toCode(size);
+        return "imul" + suffix() + " " + source.toCode(size);
+    }
+
+    private String suffix() {
+        return switch (size) {
+            case BIT8 -> "b";
+            case BIT16 -> "w";
+            case BIT32 -> "l";
+            case BIT64 -> "q";
+        };
     }
 }
