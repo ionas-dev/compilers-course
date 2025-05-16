@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler.backend.x86_64.regalloc;
 
 import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
+import edu.kit.kastel.vads.compiler.backend.inssel.ConstInstructionTarget;
 import edu.kit.kastel.vads.compiler.backend.inssel.Instruction;
 import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
 import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
@@ -8,8 +9,10 @@ import edu.kit.kastel.vads.compiler.backend.regalloc.VirtualRegister;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.BinaryOperationInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MoveInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.MultiplyInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.ReturnInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.inssel.SignedDivisionInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.liveness.LivenessAnalyzer;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,8 +28,12 @@ import java.util.Set;
 
 public class RegisterAllocator {
 
-    Map<Integer, Register> registers = new HashMap<>();
-    EnumSet<Register> availableRegisters = EnumSet.complementOf(EnumSet.of(Register.STACK_POINTER, Register.BASE_POINTER));
+    Map<Integer, InstructionTarget> registers = new HashMap<>();
+    EnumSet<Register> availableRegisters = EnumSet.complementOf(
+            EnumSet.of(Register.STACK_POINTER, Register.BASE_POINTER, Register.R11, Register.R12)
+    );
+    InstructionTarget stackRegister1 = Register.R11;
+    InstructionTarget stackRegister2 = Register.R12;
 
     public List<Instruction> allocateRegisters(List<Instruction> instructions) {
         Graph<IRegister> graph = buildChordalGraph(instructions);
@@ -40,45 +47,102 @@ public class RegisterAllocator {
     private List<Instruction> exchangeVirtualRegister(List<Instruction> instructions, Map<IRegister, Integer> coloredNodes) {
         List<Instruction> validInstructions = new ArrayList<>(instructions.size());
 
+        if (StackTarget.absoluteOffset() > 0) {
+            int reservationBytes = StackTarget.absoluteOffset() + 16 - StackTarget.absoluteOffset() % 16;
+            ConstInstructionTarget constInstructionTarget = new ConstInstructionTarget(reservationBytes);
+            validInstructions.add(new BinaryOperationInstruction(constInstructionTarget, Register.STACK_POINTER, BinaryOperationInstruction.Operation.SUB, BitSize.BIT64));
+        }
+
         for (Instruction instruction : instructions) {
             switch (instruction) {
+                // TODO: Extract cases
                 case BinaryOperationInstruction binaryOperationInstruction -> {
                     InstructionTarget source = binaryOperationInstruction.source() instanceof VirtualRegister
                             ? findRealRegister((VirtualRegister) binaryOperationInstruction.source(), coloredNodes)
                             : binaryOperationInstruction.source();
-                    IRegister target = binaryOperationInstruction.target() instanceof VirtualRegister
+                    InstructionTarget target = binaryOperationInstruction.target() instanceof VirtualRegister
                             ? findRealRegister((VirtualRegister) binaryOperationInstruction.target(), coloredNodes)
                             : binaryOperationInstruction.target();
 
-                    validInstructions.add(new BinaryOperationInstruction(source, target, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
+                    InstructionTarget tempSource = source;
+                    InstructionTarget tempTarget = target;
+
+                    if (source instanceof StackTarget) {
+                        tempSource = stackRegister1;
+                        validInstructions.add(new MoveInstruction(source, tempSource, binaryOperationInstruction.size()));
+                    }
+
+                    if (target instanceof StackTarget) {
+                        tempTarget = stackRegister2;
+                        validInstructions.add(new MoveInstruction(target, tempTarget, binaryOperationInstruction.size()));
+                    }
+
+                    validInstructions.add(new BinaryOperationInstruction(tempSource, tempTarget, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
+
+                    if (source instanceof StackTarget) {
+                        validInstructions.add(new MoveInstruction(tempSource, source, binaryOperationInstruction.size()));
+                    }
+
+                    if (target instanceof StackTarget) {
+                        validInstructions.add(new MoveInstruction(tempTarget, target, binaryOperationInstruction.size()));
+                    }
                 }
                 case MoveInstruction moveInstruction -> {
                     InstructionTarget source = moveInstruction.source() instanceof VirtualRegister
                             ? findRealRegister((VirtualRegister) moveInstruction.source(), coloredNodes)
                             : moveInstruction.source();
-                    IRegister target = moveInstruction.target() instanceof VirtualRegister
+                    InstructionTarget target = moveInstruction.target() instanceof VirtualRegister
                             ? findRealRegister((VirtualRegister) moveInstruction.target(), coloredNodes)
                             : moveInstruction.target();
 
-                    validInstructions.add(new MoveInstruction(source, target, moveInstruction.size()));
+
+                    InstructionTarget tempRegister = source;
+                    if (source instanceof StackTarget && target instanceof StackTarget) {
+                        tempRegister = stackRegister1;
+                        validInstructions.add(new MoveInstruction(source, tempRegister, moveInstruction.size()));
+                    }
+
+                    validInstructions.add(new MoveInstruction(tempRegister, target, moveInstruction.size()));
                 }
                 case SignedDivisionInstruction(VirtualRegister source, BitSize size) -> {
-                    IRegister register = findRealRegister(source, coloredNodes);
+                    InstructionTarget register = findRealRegister(source, coloredNodes);
 
-                    validInstructions.add(new SignedDivisionInstruction(register, size));
+                    InstructionTarget tempRegister = register;
+                    if (register instanceof StackTarget) {
+                        tempRegister = stackRegister1;
+                        validInstructions.add(new MoveInstruction(register, tempRegister, size));
+                    }
+
+                    validInstructions.add(new SignedDivisionInstruction(tempRegister, size));
                 }
                 case MultiplyInstruction(VirtualRegister source, BitSize size) -> {
-                    IRegister register = findRealRegister(source, coloredNodes);
+                    InstructionTarget register = findRealRegister(source, coloredNodes);
 
-                    validInstructions.add(new MultiplyInstruction(register, size));
+                    InstructionTarget tempRegister = register;
+                    if (register instanceof StackTarget) {
+                        tempRegister = stackRegister1;
+                        validInstructions.add(new MoveInstruction(register, tempRegister, size));
+                    }
+
+                    validInstructions.add(new MultiplyInstruction(tempRegister, size));
+                }
+                case ReturnInstruction _ -> {
+                    if (StackTarget.absoluteOffset() > 0) {
+                        int reservationBytes = StackTarget.absoluteOffset() + 16 - StackTarget.absoluteOffset() % 16;
+                        ConstInstructionTarget constInstructionTarget = new ConstInstructionTarget(reservationBytes);
+                        validInstructions.add(new BinaryOperationInstruction(constInstructionTarget, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
+                    }
+
+                    validInstructions.add(instruction);
                 }
                 default -> validInstructions.add(instruction);
             }
         }
+
         return validInstructions;
     }
 
-    private Register findRealRegister(VirtualRegister register, Map<IRegister, Integer> coloredNodes) {
+    private InstructionTarget findRealRegister(VirtualRegister register, Map<IRegister, Integer> coloredNodes) {
         Integer color = coloredNodes.get(register);
         if (color != null) {
             assert registers.containsKey(color) : "Implementation error";
@@ -106,9 +170,14 @@ public class RegisterAllocator {
             Integer color = coloredNodes.get(node.getValue());
             if (!registers.containsKey(color)) {
                 // TODO: Register spilling fixen
-                Register availableRegister = availableRegisters.stream().findFirst().get();
-                registers.put(color, availableRegister);
-                availableRegisters.remove(availableRegister);
+                Optional<Register> availableRegister = availableRegisters.stream().findFirst();
+                if (availableRegister.isPresent()) {
+                    availableRegisters.remove(availableRegister.get());
+                    registers.put(color, availableRegister.get());
+                } else {
+                    // TODO: Fix 32 Bit
+                    registers.put(color, new StackTarget(BitSize.BIT32));
+                }
             }
         }
 

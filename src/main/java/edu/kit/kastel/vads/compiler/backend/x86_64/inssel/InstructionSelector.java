@@ -32,7 +32,6 @@ public class InstructionSelector implements IInstructionSelector {
     @Override
     public List<Instruction> transform(IrGraph graph) throws UnsupportedOperationException {
         List<Instruction> instructions = new ArrayList<>();
-        instructions.add(() -> "_" + graph.name() + ":");
 
         VirtualRegisterAllocator allocator = new VirtualRegisterAllocator();
         Map<Node, IRegister> registers = allocator.allocateRegisters(graph);

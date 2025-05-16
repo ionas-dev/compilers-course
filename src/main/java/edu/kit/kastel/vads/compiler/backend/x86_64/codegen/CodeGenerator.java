@@ -35,13 +35,15 @@ public class CodeGenerator implements ICodeGenerator {
                 () -> "syscall"
                 ));
 
+        RegisterAllocator allocator = new RegisterAllocator();
+
         for (IrGraph graph : program) {
             instructions.add(() -> "");
-            instructions.addAll(instructionSelector.transform(graph));
+            instructions.add(() -> "_" + graph.name() + ":");
+            instructions.addAll(allocator.allocateRegisters(instructionSelector.transform(graph)));
         }
 
-        RegisterAllocator allocator = new RegisterAllocator();
-        return allocator.allocateRegisters(instructions).stream()
+        return instructions.stream()
                 .filter(instruction -> !(instruction instanceof MoveInstruction) || !((MoveInstruction) instruction).source().equals(((MoveInstruction) instruction).target()))
                 .map(Instruction::toCode)
                 .collect(Collectors.joining("\n"));

@@ -5,7 +5,7 @@ import edu.kit.kastel.vads.compiler.backend.inssel.InstructionTarget;
 import edu.kit.kastel.vads.compiler.backend.inssel.BitSize;
 import edu.kit.kastel.vads.compiler.backend.regalloc.IRegister;
 
-public record MoveInstruction(InstructionTarget source, IRegister target, BitSize size) implements Instruction {
+public record MoveInstruction(InstructionTarget source, InstructionTarget target, BitSize size) implements Instruction {
 
     private String suffix() {
         return switch (size) {
