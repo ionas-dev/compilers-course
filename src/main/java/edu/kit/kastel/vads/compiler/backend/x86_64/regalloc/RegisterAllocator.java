@@ -26,7 +26,7 @@ import java.util.Set;
 public class RegisterAllocator {
 
     Map<Integer, Register> registers = new HashMap<>();
-    EnumSet<Register> availableRegisters = EnumSet.allOf(Register.class);
+    EnumSet<Register> availableRegisters = EnumSet.complementOf(EnumSet.of(Register.STACK_POINTER, Register.BASE_POINTER));
 
     public List<Instruction> allocateRegisters(List<Instruction> instructions) {
         Graph<IRegister> graph = buildChordalGraph(instructions);
