@@ -78,7 +78,7 @@ public class RegisterAllocator {
                             ? findPhysicalOperand((VirtualOperand) moveInstruction.target(), coloredNodes)
                             : moveInstruction.target();
 
-                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validStatements, moveInstruction.size());
+                    Operand tempSource = target instanceof StackSlotOperand ? moveStackSlotToRegister(source, stackRegister1, validStatements, moveInstruction.size()) : source;
                     validStatements.add(new MoveInstruction(tempSource, target, moveInstruction.size()));
                 }
                 case SignedDivisionInstruction signedDivisionInstruction
