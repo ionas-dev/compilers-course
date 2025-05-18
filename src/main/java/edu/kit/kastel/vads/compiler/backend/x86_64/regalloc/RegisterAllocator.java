@@ -54,7 +54,6 @@ public class RegisterAllocator {
 
         for (X86Statement instruction : instructions) {
             switch (instruction) {
-                // TODO: Extract cases
                 case BinaryOperationInstruction binaryOperationInstruction -> {
                     Operand source = binaryOperationInstruction.source() instanceof VirtualOperand
                             ? findPhysicalOperand((VirtualOperand) binaryOperationInstruction.source(), coloredNodes)

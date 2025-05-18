@@ -54,7 +54,6 @@ public class Main {
             }
         }
 
-        // TODO: generate assembly and invoke gcc instead of generating abstract assembly
         CodeGenerator generator = new X86Assembler();
         try {
             String s = generator.generateCode(graphs);
