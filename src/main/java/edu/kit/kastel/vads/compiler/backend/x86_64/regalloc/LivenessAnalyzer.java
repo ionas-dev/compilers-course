@@ -1,7 +1,6 @@
 package edu.kit.kastel.vads.compiler.backend.x86_64.regalloc;
 
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
-import edu.kit.kastel.vads.compiler.backend.common.statement.Statement;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.ImmediateOperand;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.BinaryOperationInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.CallInstruction;

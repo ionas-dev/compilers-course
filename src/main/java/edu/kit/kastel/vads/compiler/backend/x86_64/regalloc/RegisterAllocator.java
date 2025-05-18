@@ -63,11 +63,11 @@ public class RegisterAllocator {
                             ? findPhysicalOperand((VirtualOperand) binaryOperationInstruction.target(), coloredNodes)
                             : binaryOperationInstruction.target();
 
-                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, instructions, binaryOperationInstruction.size());
-                    Operand tempTarget = moveStackSlotToRegister(target, stackRegister2, instructions, binaryOperationInstruction.size());
+                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validInstructions, binaryOperationInstruction.size());
+                    Operand tempTarget = moveStackSlotToRegister(target, stackRegister2, validInstructions, binaryOperationInstruction.size());
                     validInstructions.add(new BinaryOperationInstruction(tempSource, tempTarget, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
-                    moveRegisterToStackSlot(stackRegister1, source, instructions, binaryOperationInstruction.size());
-                    moveRegisterToStackSlot(stackRegister2, target, instructions, binaryOperationInstruction.size());
+                    moveRegisterToStackSlot(stackRegister1, source, validInstructions, binaryOperationInstruction.size());
+                    moveRegisterToStackSlot(stackRegister2, target, validInstructions, binaryOperationInstruction.size());
                 }
                 case MoveInstruction moveInstruction -> {
                     Operand source = moveInstruction.source() instanceof VirtualOperand
@@ -77,21 +77,21 @@ public class RegisterAllocator {
                             ? findPhysicalOperand((VirtualOperand) moveInstruction.target(), coloredNodes)
                             : moveInstruction.target();
 
-                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, instructions, moveInstruction.size());
+                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validInstructions, moveInstruction.size());
                     validInstructions.add(new MoveInstruction(tempSource, target, moveInstruction.size()));
                 }
                 case SignedDivisionInstruction signedDivisionInstruction
                         when signedDivisionInstruction.source() instanceof VirtualOperand virtualOperand -> {
                     Operand operand = findPhysicalOperand(virtualOperand, coloredNodes);
 
-                    Operand tempOperand = moveStackSlotToRegister(operand, stackRegister1, instructions, signedDivisionInstruction.size());
+                    Operand tempOperand = moveStackSlotToRegister(operand, stackRegister1, validInstructions, signedDivisionInstruction.size());
                     validInstructions.add(new SignedDivisionInstruction(tempOperand, signedDivisionInstruction.size()));
                 }
                 case SignedMultiplyInstruction signedMultiplyInstruction
                         when signedMultiplyInstruction.source() instanceof VirtualOperand virtualOperand -> {
                     Operand operand = findPhysicalOperand(virtualOperand, coloredNodes);
 
-                    Operand tempRegister = moveStackSlotToRegister(operand, stackRegister1, instructions, signedMultiplyInstruction.size());
+                    Operand tempRegister = moveStackSlotToRegister(operand, stackRegister1, validInstructions, signedMultiplyInstruction.size());
                     validInstructions.add(new SignedMultiplyInstruction(tempRegister, signedMultiplyInstruction.size()));
                 }
                 case ReturnInstruction _ -> {
@@ -164,14 +164,16 @@ public class RegisterAllocator {
 
         for (Node<Operand> node : nodes) {
             Integer color = coloredNodes.get(node.getValue());
-            if (!physicalOperands.containsKey(color)) {
-                Optional<Register> availableRegister = availableRegisters.stream().findFirst();
-                if (availableRegister.isPresent()) {
-                    availableRegisters.remove(availableRegister.get());
-                    physicalOperands.put(color, availableRegister.get());
-                } else {
-                    physicalOperands.put(color, new StackSlotOperand(BitSize.BIT32));
-                }
+            if (physicalOperands.containsKey(color)) {
+                continue;
+            }
+
+            Optional<Register> availableRegister = availableRegisters.stream().findFirst();
+            if (availableRegister.isPresent()) {
+                availableRegisters.remove(availableRegister.get());
+                physicalOperands.put(color, availableRegister.get());
+            } else {
+                physicalOperands.put(color, new StackSlotOperand(BitSize.BIT32));
             }
         }
 
