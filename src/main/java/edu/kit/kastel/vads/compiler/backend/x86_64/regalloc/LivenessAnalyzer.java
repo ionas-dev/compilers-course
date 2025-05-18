@@ -4,12 +4,19 @@ import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 import edu.kit.kastel.vads.compiler.backend.common.statement.Statement;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.ImmediateOperand;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.BinaryOperationInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.CallInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.Comment;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.EmptyStatement;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.GlobalDirective;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.Label;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.MoveInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignedMultiplyInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.ReturnInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignExtendInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignedDivisionInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.Register;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SyscallInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.TextDirective;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.X86Statement;
 
 import java.util.HashMap;
@@ -27,7 +34,7 @@ public class LivenessAnalyzer {
         ListIterator<X86Statement> iterator = instructions.listIterator(instructions.size());
         int line = instructions.size() - 1;
         while (iterator.hasPrevious()) {
-            Statement instruction = iterator.previous();
+            X86Statement instruction = iterator.previous();
 
             switch (instruction) {
                 case MoveInstruction moveInstruction -> {
@@ -48,7 +55,9 @@ public class LivenessAnalyzer {
                     gen(line, signedMultiplyInstruction.source());
                 }
                 case ReturnInstruction _ -> gen(line, Register.ACCUMULATOR);
-                default -> {}
+                case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _, Label _, SyscallInstruction _,
+                     TextDirective _ -> {
+                }
             }
 
             liveIn.computeIfAbsent(line - 1, _ -> new HashSet<>()).addAll(liveIn.get(line));
