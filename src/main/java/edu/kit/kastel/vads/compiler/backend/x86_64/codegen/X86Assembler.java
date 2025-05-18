@@ -50,10 +50,11 @@ public class X86Assembler implements CodeGenerator {
             instructions.add(new Label("_" + graph.name()));
 
             Map<Node, Operand> virtualOperands = virtualAllocator.allocateVirtualOperands(graph);
-            instructions.addAll(InstructionSelector.selectInstructions(graph, virtualOperands));
+            List<X86Statement> graphInstructions = InstructionSelector.selectInstructions(graph, virtualOperands);
+            instructions.addAll(registerAllocator.allocateRegisters(graphInstructions));
         }
 
-        return registerAllocator.allocateRegisters(instructions).stream()
+        return instructions.stream()
                 .filter(instruction -> !(instruction instanceof MoveInstruction) || !((MoveInstruction) instruction).source().equals(((MoveInstruction) instruction).target()))
                 .map(Statement::toCode)
                 .collect(Collectors.joining("\n"));
