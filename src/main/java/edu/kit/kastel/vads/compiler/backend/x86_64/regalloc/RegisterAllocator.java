@@ -9,12 +9,20 @@ import edu.kit.kastel.vads.compiler.backend.common.operand.VirtualOperand;
 import edu.kit.kastel.vads.compiler.backend.common.util.graph.Graph;
 import edu.kit.kastel.vads.compiler.backend.common.util.graph.Node;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.BinaryOperationInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.CallInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.Comment;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.EmptyStatement;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.GlobalDirective;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.Label;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.MoveInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignExtendInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignedMultiplyInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.ReturnInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignedDivisionInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.StackSlotOperand;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.Register;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SyscallInstruction;
+import edu.kit.kastel.vads.compiler.backend.x86_64.statement.TextDirective;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.X86Statement;
 
 import java.util.ArrayList;
@@ -34,26 +42,20 @@ public class RegisterAllocator {
     private final Register stackRegister1 = Register.R11;
     private final Register stackRegister2 = Register.R12;
 
-    public List<X86Statement> allocateRegisters(List<X86Statement> instructions) {
-        Map<Integer, Set<Operand>> liveIn = new LivenessAnalyzer().computeLiveIn(instructions);
+    public List<X86Statement> allocateRegisters(List<X86Statement> statements) {
+        Map<Integer, Set<Operand>> liveIn = new LivenessAnalyzer().computeLiveIn(statements);
         Graph<Operand> graph = ChordalGraph.buildGraph(liveIn);
         List<Node<Operand>> orderedNodes = graph.simplicialEliminationOrder();
         Map<Operand, Integer> coloredNodes = color(orderedNodes);
 
-        return exchangeVirtualRegisters(instructions, coloredNodes);
+        return exchangeVirtualRegisters(statements, coloredNodes);
     }
 
-    private List<X86Statement> exchangeVirtualRegisters(List<X86Statement> instructions, Map<Operand, Integer> coloredNodes) {
-        List<X86Statement> validInstructions = new ArrayList<>(instructions.size());
+    private List<X86Statement> exchangeVirtualRegisters(List<X86Statement> statements, Map<Operand, Integer> coloredNodes) {
+        List<X86Statement> validStatements = new ArrayList<>(statements.size());
 
-        if (StackSlotOperand.absoluteOffset() > 0) {
-            int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
-            ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
-            validInstructions.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.SUB, BitSize.BIT64));
-        }
-
-        for (X86Statement instruction : instructions) {
-            switch (instruction) {
+        for (X86Statement statement : statements) {
+            switch (statement) {
                 case BinaryOperationInstruction binaryOperationInstruction -> {
                     Operand source = binaryOperationInstruction.source() instanceof VirtualOperand
                             ? findPhysicalOperand((VirtualOperand) binaryOperationInstruction.source(), coloredNodes)
@@ -62,11 +64,11 @@ public class RegisterAllocator {
                             ? findPhysicalOperand((VirtualOperand) binaryOperationInstruction.target(), coloredNodes)
                             : binaryOperationInstruction.target();
 
-                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validInstructions, binaryOperationInstruction.size());
-                    Operand tempTarget = moveStackSlotToRegister(target, stackRegister2, validInstructions, binaryOperationInstruction.size());
-                    validInstructions.add(new BinaryOperationInstruction(tempSource, tempTarget, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
-                    moveRegisterToStackSlot(stackRegister1, source, validInstructions, binaryOperationInstruction.size());
-                    moveRegisterToStackSlot(stackRegister2, target, validInstructions, binaryOperationInstruction.size());
+                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validStatements, binaryOperationInstruction.size());
+                    Operand tempTarget = moveStackSlotToRegister(target, stackRegister2, validStatements, binaryOperationInstruction.size());
+                    validStatements.add(new BinaryOperationInstruction(tempSource, tempTarget, binaryOperationInstruction.operation(), binaryOperationInstruction.size()));
+                    moveRegisterToStackSlot(stackRegister1, source, validStatements, binaryOperationInstruction.size());
+                    moveRegisterToStackSlot(stackRegister2, target, validStatements, binaryOperationInstruction.size());
                 }
                 case MoveInstruction moveInstruction -> {
                     Operand source = moveInstruction.source() instanceof VirtualOperand
@@ -76,37 +78,46 @@ public class RegisterAllocator {
                             ? findPhysicalOperand((VirtualOperand) moveInstruction.target(), coloredNodes)
                             : moveInstruction.target();
 
-                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validInstructions, moveInstruction.size());
-                    validInstructions.add(new MoveInstruction(tempSource, target, moveInstruction.size()));
+                    Operand tempSource = moveStackSlotToRegister(source, stackRegister1, validStatements, moveInstruction.size());
+                    validStatements.add(new MoveInstruction(tempSource, target, moveInstruction.size()));
                 }
                 case SignedDivisionInstruction signedDivisionInstruction
                         when signedDivisionInstruction.source() instanceof VirtualOperand virtualOperand -> {
                     Operand operand = findPhysicalOperand(virtualOperand, coloredNodes);
 
-                    Operand tempOperand = moveStackSlotToRegister(operand, stackRegister1, validInstructions, signedDivisionInstruction.size());
-                    validInstructions.add(new SignedDivisionInstruction(tempOperand, signedDivisionInstruction.size()));
+                    Operand tempOperand = moveStackSlotToRegister(operand, stackRegister1, validStatements, signedDivisionInstruction.size());
+                    validStatements.add(new SignedDivisionInstruction(tempOperand, signedDivisionInstruction.size()));
                 }
                 case SignedMultiplyInstruction signedMultiplyInstruction
                         when signedMultiplyInstruction.source() instanceof VirtualOperand virtualOperand -> {
                     Operand operand = findPhysicalOperand(virtualOperand, coloredNodes);
 
-                    Operand tempRegister = moveStackSlotToRegister(operand, stackRegister1, validInstructions, signedMultiplyInstruction.size());
-                    validInstructions.add(new SignedMultiplyInstruction(tempRegister, signedMultiplyInstruction.size()));
+                    Operand tempRegister = moveStackSlotToRegister(operand, stackRegister1, validStatements, signedMultiplyInstruction.size());
+                    validStatements.add(new SignedMultiplyInstruction(tempRegister, signedMultiplyInstruction.size()));
                 }
-                case ReturnInstruction _ -> {
+                case SyscallInstruction _ -> {
                     if (StackSlotOperand.absoluteOffset() > 0) {
                         int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
                         ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
-                        validInstructions.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
+                        validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
                     }
 
-                    validInstructions.add(instruction);
+                    validStatements.add(statement);
                 }
-                default -> validInstructions.add(instruction);
+                case Label label -> {
+                    validStatements.add(statement);
+
+                    if (label.value().equals("main") && StackSlotOperand.absoluteOffset() > 0) {
+                        int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
+                        ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
+                        validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.SUB, BitSize.BIT64));
+                    }
+                }
+                case ReturnInstruction _, CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
             }
         }
 
-        return validInstructions;
+        return validStatements;
     }
 
     /**
