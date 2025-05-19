@@ -3,6 +3,8 @@ package edu.kit.kastel.vads.compiler.backend.x86_64.operand;
 import edu.kit.kastel.vads.compiler.backend.common.operand.PhysicalOperand;
 import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
 
+import java.util.Objects;
+
 public record ImmediateOperand(int value) implements PhysicalOperand {
 
     @Override
@@ -11,12 +13,14 @@ public record ImmediateOperand(int value) implements PhysicalOperand {
     }
 
     @Override
-    public int hashCode() {
-        return ImmediateOperand.class.hashCode() + Integer.hashCode(value);
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ImmediateOperand that = (ImmediateOperand) o;
+        return value == that.value;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return this.getClass().equals(obj.getClass()) && this.hashCode() == obj.hashCode();
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 }

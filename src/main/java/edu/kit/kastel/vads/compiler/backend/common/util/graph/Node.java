@@ -2,6 +2,7 @@ package edu.kit.kastel.vads.compiler.backend.common.util.graph;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class Node<T> {
@@ -26,13 +27,14 @@ public class Node<T> {
     }
 
     @Override
-    public int hashCode() {
-        return Node.class.hashCode() + value.hashCode();
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Node<?> node = (Node<?>) o;
+        return Objects.equals(value, node.value) && Objects.equals(neighbors, node.neighbors);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return this.getClass().equals(obj.getClass()) && this.hashCode() == obj.hashCode();
+    public int hashCode() {
+        return Objects.hash(value);
     }
-
 }

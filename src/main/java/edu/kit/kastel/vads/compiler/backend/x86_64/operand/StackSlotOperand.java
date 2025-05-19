@@ -4,6 +4,8 @@ import edu.kit.kastel.vads.compiler.backend.common.operand.PhysicalOperand;
 import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 
+import java.util.Objects;
+
 public class StackSlotOperand implements PhysicalOperand {
 
     // TODO: Move into register allocator
@@ -26,5 +28,17 @@ public class StackSlotOperand implements PhysicalOperand {
     @Override
     public String toCode(BitSize size) {
         return offset + "(%rsp)";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        StackSlotOperand that = (StackSlotOperand) o;
+        return offset == that.offset;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(offset);
     }
 }

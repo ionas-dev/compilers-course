@@ -63,5 +63,17 @@ public class Graph<T> {
         public int compareTo(WeightedValue<T> o) {
             return weight - o.weight;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            WeightedValue<?> that = (WeightedValue<?>) o;
+            return weight == that.weight && Objects.equals(node, that.node);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(node, weight);
+        }
     }
 }
