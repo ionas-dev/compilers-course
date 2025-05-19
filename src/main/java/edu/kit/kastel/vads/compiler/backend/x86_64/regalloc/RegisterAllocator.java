@@ -46,7 +46,9 @@ public class RegisterAllocator {
         Map<Integer, Set<Operand>> liveIn = new LivenessAnalyzer().computeLiveIn(statements);
         Graph<Operand> graph = ChordalGraph.buildGraph(liveIn);
         List<Node<Operand>> orderedNodes = graph.simplicialEliminationOrder();
-        Map<Operand, Integer> coloredNodes = color(orderedNodes);
+
+        List<Node<Operand>> orderedNodes2 = graph.simplicialEliminationOrder2();
+        Map<Operand, Integer> coloredNodes = color(orderedNodes2);
 
         return exchangeVirtualRegisters(statements, coloredNodes);
     }

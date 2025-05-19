@@ -1,5 +1,7 @@
 package edu.kit.kastel.vads.compiler.backend.common.util.graph;
 
+import edu.kit.kastel.vads.compiler.backend.common.util.FibonacciHeap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -36,44 +38,40 @@ public class Graph<T> {
     public List<Node<T>> simplicialEliminationOrder() {
         List<Node<T>> orderedNodes = new ArrayList<>(nodes.size());
 
-        PriorityQueue<WeightedValue<T>> pq = new PriorityQueue<>(nodes.size(), Comparator.reverseOrder());
-        nodes.values().stream().map(WeightedValue<T>::new).forEach(pq::add);
+        FibonacciHeap<Node<T>> heap = new FibonacciHeap<>();
+        Map<Node<T>, FibonacciHeap.Entry<Node<T>>> entries = new HashMap<>(nodes.size());
+        nodes.values().forEach(node -> entries.put(node, heap.enqueue(node, nodes.size())));
 
-        for (int i = 0; i < nodes.size(); i++) {
-            Node<T> maxNode = Objects.requireNonNull(pq.poll()).node;
-            for (Node<T> neighbor: maxNode.getNeighbors()) {
-                pq.stream().filter(weightedOperand -> weightedOperand.node.equals(neighbor)).forEach(weightedOperand -> weightedOperand.weight++);
-            }
+        while (!heap.isEmpty()) {
+            Node<T> maxNode = heap.dequeueMin().getValue();
+            maxNode.getNeighbors().stream().map(entries::get).filter(Objects::nonNull).forEach(neighbor -> heap.decreaseKey(neighbor, neighbor.getPriority() - 1));
             orderedNodes.add(maxNode);
+            entries.remove(maxNode);
         }
         return orderedNodes;
     }
 
-    private static class WeightedValue<T> implements Comparable<WeightedValue<T>> {
+    /**
+     * Algorithm: Maximum cardinality search
+     * @return A simplicial elimination ordered list of nodes
+     */
+    public List<Node<T>> simplicialEliminationOrder2() {
+        List<Node<T>> orderedNodes = new ArrayList<>(nodes.size());
 
-        private final Node<T> node;
-        private int weight;
+        Map<Node<T>, Integer> weightedNodes = new HashMap<>(nodes.size());
+        nodes.values().forEach(node -> weightedNodes.put(node, 0));
 
-        public WeightedValue(Node<T> node) {
-            this.node = node;
-            this.weight = 0;
+        if (weightedNodes.isEmpty()) {
+            return orderedNodes;
         }
 
-        @Override
-        public int compareTo(WeightedValue<T> o) {
-            return weight - o.weight;
+        while (!weightedNodes.isEmpty()) {
+            Map.Entry<Node<T>, Integer> maxEntry = weightedNodes.entrySet().stream()
+                    .reduce(weightedNodes.entrySet().stream().findFirst().get(), (Map.Entry<Node<T>, Integer> a, Map.Entry<Node<T>, Integer> b) -> a.getValue().compareTo(b.getValue()) >= 0 ? a : b);
+            maxEntry.getKey().getNeighbors().stream().filter(weightedNodes::containsKey).forEach(neighbor -> weightedNodes.put(neighbor, weightedNodes.get(neighbor) + 1));
+            orderedNodes.add(maxEntry.getKey());
+            weightedNodes.remove(maxEntry.getKey());
         }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == null || getClass() != o.getClass()) return false;
-            WeightedValue<?> that = (WeightedValue<?>) o;
-            return weight == that.weight && Objects.equals(node, that.node);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(node, weight);
-        }
+        return orderedNodes;
     }
 }
