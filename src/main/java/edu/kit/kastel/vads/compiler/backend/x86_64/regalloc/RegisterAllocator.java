@@ -102,24 +102,25 @@ public class RegisterAllocator {
                     validStatements.add(new SignedMultiplyInstruction(tempRegister, signedMultiplyInstruction.size()));
                 }
                 case SyscallInstruction _ -> {
-                    if (StackSlotOperand.absoluteOffset() > 0) {
-                        int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
-                        ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
-                        validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
-                    }
-
                     validStatements.add(statement);
                 }
                 case Label label -> {
                     validStatements.add(statement);
-
-                    if (label.value().equals("main") && StackSlotOperand.absoluteOffset() > 0) {
+                    if (label.value().equals("_main") && StackSlotOperand.absoluteOffset() > 0) {
                         int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
                         ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
                         validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.SUB, BitSize.BIT64));
                     }
                 }
-                case ReturnInstruction _, CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
+                case ReturnInstruction _ -> {
+                    if (StackSlotOperand.absoluteOffset() > 0) {
+                        int reservationBytes = StackSlotOperand.absoluteOffset() + 16 - StackSlotOperand.absoluteOffset() % 16;
+                        ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
+                        validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
+                    }
+                    validStatements.add(statement);
+                }
+                 case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
             }
         }
 
