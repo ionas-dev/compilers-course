@@ -26,12 +26,16 @@ import edu.kit.kastel.vads.compiler.backend.x86_64.statement.TextDirective;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.X86Statement;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RegisterAllocator {
 
@@ -48,7 +52,7 @@ public class RegisterAllocator {
         List<Node<Operand>> orderedNodes = graph.simplicialEliminationOrder();
 
         List<Node<Operand>> orderedNodes2 = graph.simplicialEliminationOrder2();
-        Map<Operand, Integer> coloredNodes = color(orderedNodes2);
+        Map<Operand, Integer> coloredNodes = color(orderedNodes2.reversed());
 
         return exchangeVirtualRegisters(statements, coloredNodes);
     }
@@ -164,12 +168,19 @@ public class RegisterAllocator {
     private Map<Operand, Integer> color(List<Node<Operand>> nodes) {
         Map<Operand, Integer> coloredNodes = new HashMap<>();
         for (Node<Operand> node : nodes) {
-            int color = node.getNeighbors().stream()
-                    .map(neighbor -> Optional.ofNullable(coloredNodes.get(neighbor.getValue())).orElse(-1))
-                    .mapToInt(Integer::intValue).max().orElse(-1);
-            coloredNodes.put(node.getValue(), color + 1);
+            Set<Integer> usedColors = node.getNeighbors().stream()
+                    .map(n -> coloredNodes.get(n.getValue()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            int color = 0;
+            while (usedColors.contains(color)) {
+                color++;
+            }
+
+            coloredNodes.put(node.getValue(), color);
             if (node.getValue() instanceof Register register) {
-                physicalOperands.put(color + 1, register);
+                physicalOperands.put(color, register);
                 availableRegisters.remove(register);
             }
         }
