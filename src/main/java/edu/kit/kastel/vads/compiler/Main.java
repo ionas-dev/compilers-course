@@ -1,7 +1,7 @@
 package edu.kit.kastel.vads.compiler;
 
-import edu.kit.kastel.vads.compiler.backend.codegen.ICodeGenerator;
-import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.CodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.common.codegen.CodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.X86Assembler;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
@@ -54,8 +54,7 @@ public class Main {
             }
         }
 
-        // TODO: generate assembly and invoke gcc instead of generating abstract assembly
-        ICodeGenerator generator = new CodeGenerator();
+        CodeGenerator generator = new X86Assembler();
         try {
             String s = generator.generateCode(graphs);
             Path asmOutput = Path.of(output + ".s");
