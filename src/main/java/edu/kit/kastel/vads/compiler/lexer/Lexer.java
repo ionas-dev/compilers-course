@@ -36,14 +36,36 @@ public class Lexer {
             case '{' -> separator(SeparatorType.BRACE_OPEN);
             case '}' -> separator(SeparatorType.BRACE_CLOSE);
             case ';' -> separator(SeparatorType.SEMICOLON);
-            case '-' -> singleOrAssign(OperatorType.MINUS, OperatorType.ASSIGN_MINUS);
-            case '+' -> singleOrAssign(OperatorType.PLUS, OperatorType.ASSIGN_PLUS);
-            case '*' -> singleOrAssign(OperatorType.MUL, OperatorType.ASSIGN_MUL);
-            case '/' -> singleOrAssign(OperatorType.DIV, OperatorType.ASSIGN_DIV);
-            case '%' -> singleOrAssign(OperatorType.MOD, OperatorType.ASSIGN_MOD);
-            case '=' -> new Operator(OperatorType.ASSIGN, buildSpan(1));
+            case '-' -> ifEqualityFollows(OperatorType.ASSIGN_MINUS, OperatorType.MINUS);
+            case '+' -> ifEqualityFollows(OperatorType.ASSIGN_PLUS, OperatorType.PLUS);
+            case '*' -> ifEqualityFollows(OperatorType.ASSIGN_MUL, OperatorType.MUL);
+            case '/' -> ifEqualityFollows(OperatorType.ASSIGN_DIV, OperatorType.DIV);
+            case '%' -> ifEqualityFollows(OperatorType.ASSIGN_MOD, OperatorType.MOD);
+            case '&' -> sameCharacterFollows()
+                    ? new Operator(OperatorType.LOGICAL_AND, buildSpan(3))
+                    : ifEqualityFollows(OperatorType.ASSIGN_BITWISE_AND, OperatorType.BITWISE_AND);
+            case '|' -> sameCharacterFollows()
+                    ? new Operator(OperatorType.LOGICAL_OR, buildSpan(3))
+                    : ifEqualityFollows(OperatorType.ASSIGN_BITWISE_OR, OperatorType.BITWISE_OR);
+            case '^' -> ifEqualityFollows(OperatorType.ASSIGN_BITWISE_XOR, OperatorType.BITWISE_XOR);
+            case '<' -> sameCharacterFollows()
+                    ? ifEqualityFollows(OperatorType.ASSIGN_SHIFT_LEFT, OperatorType.SHIFT_LEFT, 2)
+                    : ifEqualityFollows(OperatorType.LESS_THAN_EQUALS, OperatorType.LESS_THAN);
+            case '>' -> sameCharacterFollows()
+                    ? ifEqualityFollows(OperatorType.ASSIGN_SHIFT_RIGHT, OperatorType.SHIFT_RIGHT, 2)
+                    : ifEqualityFollows(OperatorType.GREATER_THAN_EQUALS, OperatorType.GREATER_THAN);
+            case '=' -> ifEqualityFollows(OperatorType.EQUALS, OperatorType.ASSIGN);
+            case '!' -> {
+                if (equalityFollows()) {
+                    yield new Operator(OperatorType.NOT_EQUALS, buildSpan(2));
+                } else if (identifierFollows(1)) {
+                    yield lexIdentifierOrKeyword();
+                } else {
+                    yield new ErrorToken(String.valueOf(peek()), buildSpan(hasMore(1) ? 2 : 1));
+                }
+            }
             default -> {
-                if (isIdentifierChar(peek())) {
+                if (identifierFollows(1)) {
                     if (isNumeric(peek())) {
                         yield lexNumber();
                     }
@@ -133,7 +155,7 @@ public class Lexer {
 
     private Token lexIdentifierOrKeyword() {
         int off = 1;
-        while (hasMore(off) && isIdentifierChar(peek(off))) {
+        while (identifierFollows(off)) {
             off++;
         }
         String id = this.source.substring(this.pos, this.pos + off);
@@ -173,11 +195,15 @@ public class Lexer {
         return peek() == '0' && hasMore(1) && (peek(1) == 'x' || peek(1) == 'X');
     }
 
-    private boolean isIdentifierChar(char c) {
+    private boolean identifierFollows(int atOffset) {
+        if (!hasMore(atOffset)) {
+            return false;
+        }
+        int c = peek(atOffset);
         return c == '_'
-            || c >= 'a' && c <= 'z'
-            || c >= 'A' && c <= 'Z'
-            || c >= '0' && c <= '9';
+                || c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9';
     }
 
     private boolean isNumeric(char c) {
@@ -188,11 +214,27 @@ public class Lexer {
         return isNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
-    private Token singleOrAssign(OperatorType single, OperatorType assign) {
-        if (hasMore(1) && peek(1) == '=') {
-            return new Operator(assign, buildSpan(2));
+    private boolean equalityFollows() {
+        return characterFollows('=');
+    }
+
+    private boolean sameCharacterFollows() {
+        return characterFollows(peek());
+    }
+
+    private boolean characterFollows(char c) {
+        return hasMore(1) && peek(1) == c;
+    }
+
+    private Token ifEqualityFollows(OperatorType thenOperator, OperatorType elseOperator) {
+        return ifEqualityFollows(thenOperator, elseOperator, 1);
+    }
+
+    private Token ifEqualityFollows(OperatorType thenOperator, OperatorType elseOperator, int atOffset) {
+        if (hasMore(atOffset) && peek(atOffset) == '=') {
+            return new Operator(thenOperator, buildSpan(atOffset + 1));
         }
-        return new Operator(single, buildSpan(1));
+        return new Operator(elseOperator, buildSpan(atOffset));
     }
 
     private Span buildSpan(int proceed) {

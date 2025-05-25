@@ -118,7 +118,7 @@ public class RegisterAllocator {
                         ImmediateOperand immediateOperand = new ImmediateOperand(reservationBytes);
                         validStatements.add(new BinaryOperationInstruction(immediateOperand, Register.STACK_POINTER, BinaryOperationInstruction.Operation.ADD, BitSize.BIT64));
                     }
-                    validStatements.add(statement);
+                        validStatements.add(statement);
                 }
                  case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
             }
