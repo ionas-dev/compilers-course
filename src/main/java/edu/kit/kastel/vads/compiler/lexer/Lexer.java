@@ -6,6 +6,8 @@ import edu.kit.kastel.vads.compiler.lexer.Operator.OperatorType;
 import edu.kit.kastel.vads.compiler.lexer.Separator.SeparatorType;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class Lexer {
@@ -13,9 +15,13 @@ public class Lexer {
     private int pos;
     private int lineStart;
     private int line;
+    private final Map<String, KeywordType> keywords = new HashMap<>();
 
     private Lexer(String source) {
         this.source = source;
+        for (KeywordType value : KeywordType.values()) {
+            keywords.put(value.name(), value);
+        }
     }
 
     public static Lexer forString(String source) {
@@ -159,11 +165,9 @@ public class Lexer {
             off++;
         }
         String id = this.source.substring(this.pos, this.pos + off);
-        // This is a naive solution. Using a better data structure (hashmap, trie) likely performs better.
-        for (KeywordType value : KeywordType.values()) {
-            if (value.keyword().equals(id)) {
-                return new Keyword(value, buildSpan(off));
-            }
+        KeywordType type = keywords.get(id);
+        if (type != null) {
+            return new Keyword(type, buildSpan(off));
         }
         return new Identifier(id, buildSpan(off));
     }
