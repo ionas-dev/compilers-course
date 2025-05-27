@@ -61,15 +61,7 @@ public class Lexer {
                     ? ifEqualityFollows(OperatorType.ASSIGN_SHIFT_RIGHT, OperatorType.SHIFT_RIGHT, 2)
                     : ifEqualityFollows(OperatorType.GREATER_THAN_EQUALS, OperatorType.GREATER_THAN);
             case '=' -> ifEqualityFollows(OperatorType.EQUALS, OperatorType.ASSIGN);
-            case '!' -> {
-                if (equalityFollows()) {
-                    yield new Operator(OperatorType.NOT_EQUALS, buildSpan(2));
-                } else if (identifierFollows(1)) {
-                    yield lexIdentifierOrKeyword();
-                } else {
-                    yield new ErrorToken(String.valueOf(peek()), buildSpan(hasMore(1) ? 2 : 1));
-                }
-            }
+            case '!' -> ifEqualityFollows(OperatorType.NOT_EQUALS, OperatorType.LOGICAL_NOT);
             default -> {
                 if (identifierFollows(1)) {
                     if (isNumeric(peek())) {
