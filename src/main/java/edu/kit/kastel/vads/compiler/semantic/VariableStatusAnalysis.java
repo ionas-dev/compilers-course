@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
 import edu.kit.kastel.vads.compiler.antlr.L2BaseListener;
+import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
@@ -24,12 +25,12 @@ import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifie
 /// - not declared twice
 /// - not initialized twice
 /// - assigned before referenced
-class VariableStatusAnalysis extends L2BaseListener {
+class VariableStatusAnalysis extends L2BaseVisitor<Void> {
 
     private final Map<String, VariableStatus> data = new HashMap<>();
 
     @Override
-    public void enterAssignment(L2Parser.AssignmentContext ctx) {
+    public Void visitAssignment(L2Parser.AssignmentContext ctx) {
         TerminalNode identifier = identifier(ctx.leftValue());
         VariableStatus status = data.get(identifier.getText());
         if (ctx.assignOperator().ASSIGN() != null) {
@@ -40,23 +41,26 @@ class VariableStatusAnalysis extends L2BaseListener {
         if (status != VariableStatus.INITIALIZED) {
             updateStatus(identifier, VariableStatus.INITIALIZED);
         }
+        return null;
     }
 
     @Override
-    public void enterDeclaration(L2Parser.DeclarationContext ctx) {
+    public Void visitDeclaration(L2Parser.DeclarationContext ctx) {
         TerminalNode identifier = ctx.identifier().IDENT();
         checkUndeclared(identifier, data.get(identifier.getText()));
         VariableStatus status = ctx.expression() == null
                 ? VariableStatus.DECLARED
                 : VariableStatus.INITIALIZED;
         updateStatus(identifier, status);
+        return null;
     }
 
     @Override
-    public void enterIdentifier(L2Parser.IdentifierContext ctx) {
+    public Void visitIdentifier(L2Parser.IdentifierContext ctx) {
         TerminalNode identifier = ctx.IDENT();
         VariableStatus status = data.get(identifier.getText());
         checkInitialized(identifier, status);
+        return null;
     }
 
     private static void checkDeclared(TerminalNode identifier, @Nullable VariableStatus status) {

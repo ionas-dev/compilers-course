@@ -17,7 +17,7 @@ public class SemanticAnalysis {
     public void analyze() {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(new IntegerLiteralRangeAnalysis(), program);
-        walker.walk(new VariableStatusAnalysis(), program);
+        program.accept(new VariableStatusAnalysis());
         walker.walk(new ReturnAnalysis(), program);
     }
 
