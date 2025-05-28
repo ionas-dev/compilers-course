@@ -10,11 +10,14 @@ import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
 import edu.kit.kastel.vads.compiler.ir.util.YCompPrinter;
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis;
 import edu.kit.kastel.vads.compiler.semantic.SemanticException;
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.InputMismatchException;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.IOException;
@@ -34,10 +37,15 @@ public class Main {
         }
         Path input = Path.of(args[0]);
         Path output = Path.of(args[1]);
-        L2Parser.ProgramContext program = lexAndParse(input);
+        L2Parser.ProgramContext program;
         try {
+            program = lexAndParse(input);
             // TODO: Should probably recognize semantic error for test:use-uninitialized-variable
             new SemanticAnalysis(program).analyze();
+        } catch (ParseCancellationException e) {
+            e.printStackTrace();
+            System.exit(42);
+            return;
         } catch (SemanticException e) {
             e.printStackTrace();
             System.exit(7);
@@ -77,16 +85,11 @@ public class Main {
 
 
 
-    private static L2Parser.ProgramContext lexAndParse(Path input) throws IOException {
-        try {
-            L2Lexer lexer = new L2Lexer(CharStreams.fromPath(input));
-            L2Parser parser = new L2Parser(new CommonTokenStream(lexer));
-            return parser.program();
-        } catch (RecognitionException e) {
-            e.printStackTrace();
-            System.exit(42);
-            throw new AssertionError("unreachable");
-        }
+    private static L2Parser.ProgramContext lexAndParse(Path input) throws IOException, RecognitionException, ParseCancellationException {
+        L2Lexer lexer = new L2Lexer(CharStreams.fromPath(input));
+        L2Parser parser = new L2Parser(new CommonTokenStream(lexer));
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.program();
     }
 
     private static int compileMachineCode(Path inputPath, Path outputPath) throws InterruptedException, IOException {
