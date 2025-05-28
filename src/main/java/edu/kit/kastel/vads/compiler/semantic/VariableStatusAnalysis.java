@@ -41,17 +41,18 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
         if (status != VariableStatus.INITIALIZED) {
             updateStatus(identifier, VariableStatus.INITIALIZED);
         }
-        return null;
+        return ctx.expression().accept(this);
     }
 
     @Override
     public Void visitDeclaration(L2Parser.DeclarationContext ctx) {
         TerminalNode identifier = ctx.identifier().IDENT();
         checkUndeclared(identifier, data.get(identifier.getText()));
-        VariableStatus status = ctx.expression() == null
-                ? VariableStatus.DECLARED
-                : VariableStatus.INITIALIZED;
-        updateStatus(identifier, status);
+        if (ctx.expression() != null) {
+            updateStatus(identifier, VariableStatus.INITIALIZED);
+            ctx.expression().accept(this);
+        }
+        updateStatus(identifier, VariableStatus.DECLARED);
         return null;
     }
 
@@ -60,7 +61,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
         TerminalNode identifier = ctx.IDENT();
         VariableStatus status = data.get(identifier.getText());
         checkInitialized(identifier, status);
-        return null;
+        return super.visitIdentifier(ctx);
     }
 
     private static void checkDeclared(TerminalNode identifier, @Nullable VariableStatus status) {
