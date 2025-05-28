@@ -50,7 +50,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
         checkUndeclared(identifier, data.get(identifier.getText()));
         if (ctx.expression() != null) {
             updateStatus(identifier, VariableStatus.INITIALIZED);
-            ctx.expression().accept(this);
+            return ctx.expression().accept(this);
         }
         updateStatus(identifier, VariableStatus.DECLARED);
         return null;
