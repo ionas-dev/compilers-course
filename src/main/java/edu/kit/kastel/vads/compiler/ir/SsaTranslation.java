@@ -102,7 +102,7 @@ public class SsaTranslation {
                 Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
                 popSpan();
                 return Optional.of(res);
-            } else if (!ctx.expression().isEmpty()) {
+            } else if (ctx.LPAREN() != null && ctx.RPAREN() != null) {
                 return ctx.expression(0).accept(this);
             } else if (ctx.binaryOperator() == null) {
                 return super.visitExpression(ctx);
