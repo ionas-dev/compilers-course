@@ -31,6 +31,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
 
     @Override
     public Void visitAssignment(L2Parser.AssignmentContext ctx) {
+        ctx.expression().accept(this);
         TerminalNode identifier = identifier(ctx.leftValue());
         VariableStatus status = data.get(identifier.getText());
         if (ctx.assignOperator().ASSIGN() != null) {
@@ -41,7 +42,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
         if (status != VariableStatus.INITIALIZED) {
             updateStatus(identifier, VariableStatus.INITIALIZED);
         }
-        return ctx.expression().accept(this);
+        return null;
     }
 
     @Override

@@ -87,6 +87,9 @@ IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 // -------------------- Parser --------------------
 
 program: INT 'main' LPAREN RPAREN block EOF;
+program: INT main LPAREN RPAREN block EOF;
+
+main: IDENT {$IDENT.text.equals("main")}?;
 
 block: LBRACE statements RBRACE;
 
