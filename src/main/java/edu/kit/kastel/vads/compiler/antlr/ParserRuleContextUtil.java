@@ -26,7 +26,7 @@ public class ParserRuleContextUtil {
             String value = ctx.DECNUM().getText();
             optional = parseDec(value);
         } else if (ctx.HEXNUM() != null) {
-            String value = ctx.DECNUM().getText();
+            String value = ctx.HEXNUM().getText();
             optional = parseHex(value);
         }
         return optional;
