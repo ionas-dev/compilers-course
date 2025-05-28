@@ -4,7 +4,7 @@ grammar L2;
 // Whitespace and comments
 WHITESPACE: [ \t\r\n]+ -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
-MULTILINE_COMMENT: '/*' .*? '*/' -> skip;
+MULTILINE_COMMENT: '/*'  ( MULTILINE_COMMENT | ~([/*]) )* '*/' -> skip;
 
 // Keywords
 STRUCT: 'struct';
