@@ -181,8 +181,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visitControl(L2Parser.ControlContext ctx) {
             if (ctx.RETURN() == null) {
-                super.visitControl(ctx);
-                return Optional.empty();
+                return super.visitControl(ctx);
             }
             pushSpan(ctx);
             Node node = ctx.expression().accept(this).orElseThrow();
