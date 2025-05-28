@@ -24,8 +24,8 @@ class GraphConstructor {
 
     private final Optimizer optimizer;
     private final IrGraph graph;
-    private final Map<Name, Map<Block, Node>> currentDef = new HashMap<>();
-    private final Map<Block, Map<Name, Phi>> incompletePhis = new HashMap<>();
+    private final Map<String, Map<Block, Node>> currentDef = new HashMap<>();
+    private final Map<Block, Map<String, Phi>> incompletePhis = new HashMap<>();
     private final Map<Block, Node> currentSideEffect = new HashMap<>();
     private final Map<Block, Phi> incompleteSideEffectPhis = new HashMap<>();
     private final Set<Block> sealedBlocks = new HashSet<>();
@@ -94,11 +94,11 @@ class GraphConstructor {
         return this.graph;
     }
 
-    void writeVariable(Name variable, Block block, Node value) {
+    void writeVariable(String variable, Block block, Node value) {
         this.currentDef.computeIfAbsent(variable, _ -> new HashMap<>()).put(block, value);
     }
 
-    Node readVariable(Name variable, Block block) {
+    Node readVariable(String variable, Block block) {
         Node node = this.currentDef.getOrDefault(variable, Map.of()).get(block);
         if (node != null) {
             return node;
@@ -107,7 +107,7 @@ class GraphConstructor {
     }
 
 
-    private Node readVariableRecursive(Name variable, Block block) {
+    private Node readVariableRecursive(String variable, Block block) {
         Node val;
         if (!this.sealedBlocks.contains(block)) {
             val = newPhi();
@@ -123,7 +123,7 @@ class GraphConstructor {
         return val;
     }
 
-    Node addPhiOperands(Name variable, Phi phi) {
+    Node addPhiOperands(String variable, Phi phi) {
         for (Node pred : phi.block().predecessors()) {
             phi.appendOperand(readVariable(variable, pred.block()));
         }
@@ -139,7 +139,7 @@ class GraphConstructor {
     }
 
     void sealBlock(Block block) {
-        for (Map.Entry<Name, Phi> entry : this.incompletePhis.getOrDefault(block, Map.of()).entrySet()) {
+        for (Map.Entry<String, Phi> entry : this.incompletePhis.getOrDefault(block, Map.of()).entrySet()) {
             addPhiOperands(entry.getKey(), entry.getValue());
         }
         this.sealedBlocks.add(block);

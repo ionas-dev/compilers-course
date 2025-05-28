@@ -1,19 +1,22 @@
 package edu.kit.kastel.vads.compiler;
 
+import edu.kit.kastel.vads.compiler.antlr.L2Lexer;
+import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.backend.common.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.X86Assembler;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
 import edu.kit.kastel.vads.compiler.ir.util.YCompPrinter;
-import edu.kit.kastel.vads.compiler.lexer.Lexer;
-import edu.kit.kastel.vads.compiler.parser.ParseException;
-import edu.kit.kastel.vads.compiler.parser.Parser;
-import edu.kit.kastel.vads.compiler.parser.TokenSource;
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis;
 import edu.kit.kastel.vads.compiler.semantic.SemanticException;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.tree.ParseTree;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +34,7 @@ public class Main {
         }
         Path input = Path.of(args[0]);
         Path output = Path.of(args[1]);
-        ProgramTree program = lexAndParse(input);
+        L2Parser.ProgramContext program = lexAndParse(input);
         try {
             // TODO: Should probably recognize semantic error for test:use-uninitialized-variable
             new SemanticAnalysis(program).analyze();
@@ -41,10 +44,8 @@ public class Main {
             return;
         }
         List<IrGraph> graphs = new ArrayList<>();
-        for (FunctionTree function : program.topLevelTrees()) {
-            SsaTranslation translation = new SsaTranslation(function, new LocalValueNumbering());
-            graphs.add(translation.translate());
-        }
+        SsaTranslation translation = new SsaTranslation(program, new LocalValueNumbering());
+        graphs.add(translation.translate());
 
         if ("vcg".equals(System.getenv("DUMP_GRAPHS")) || "vcg".equals(System.getProperty("dumpGraphs"))) {
             Path tmp = output.toAbsolutePath().resolveSibling("graphs");
@@ -74,13 +75,14 @@ public class Main {
         println("Compiled to: ", output.toAbsolutePath().toString());
     }
 
-    private static ProgramTree lexAndParse(Path input) throws IOException {
+
+
+    private static L2Parser.ProgramContext lexAndParse(Path input) throws IOException {
         try {
-            Lexer lexer = Lexer.forString(Files.readString(input));
-            TokenSource tokenSource = new TokenSource(lexer);
-            Parser parser = new Parser(tokenSource);
-            return parser.parseProgram();
-        } catch (ParseException e) {
+            L2Lexer lexer = new L2Lexer(CharStreams.fromPath(input));
+            L2Parser parser = new L2Parser(new CommonTokenStream(lexer));
+            return parser.program();
+        } catch (RecognitionException e) {
             e.printStackTrace();
             System.exit(42);
             throw new AssertionError("unreachable");

@@ -1,5 +1,7 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
+import edu.kit.kastel.vads.compiler.antlr.L2BaseListener;
+import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
@@ -8,78 +10,80 @@ import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+
+import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifier;
 
 /// Checks that variables are
 /// - declared before assignment
 /// - not declared twice
 /// - not initialized twice
 /// - assigned before referenced
-class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnalysis.VariableStatus>> {
+class VariableStatusAnalysis extends L2BaseListener {
+
+    private final Map<String, VariableStatus> data = new HashMap<>();
 
     @Override
-    public Unit visit(AssignmentTree assignmentTree, Namespace<VariableStatus> data) {
-        switch (assignmentTree.lValue()) {
-            case LValueIdentTree(var name) -> {
-                VariableStatus status = data.get(name);
-                if (assignmentTree.operator().type() == Operator.OperatorType.ASSIGN) {
-                    checkDeclared(name, status);
-                } else {
-                    checkInitialized(name, status);
-                }
-                if (status != VariableStatus.INITIALIZED) {
-                    // only update when needed, reassignment is totally fine
-                    updateStatus(data, VariableStatus.INITIALIZED, name);
-                }
-            }
+    public void enterAssignment(L2Parser.AssignmentContext ctx) {
+        TerminalNode identifier = identifier(ctx.leftValue());
+        VariableStatus status = data.get(identifier.getText());
+        if (ctx.assignOperator().ASSIGN() != null) {
+            checkDeclared(identifier, status);
+        } else {
+            checkInitialized(identifier, status);
         }
-        return NoOpVisitor.super.visit(assignmentTree, data);
+        if (status != VariableStatus.INITIALIZED) {
+            updateStatus(identifier, VariableStatus.INITIALIZED);
+        }
     }
 
-    private static void checkDeclared(NameTree name, @Nullable VariableStatus status) {
+    @Override
+    public void enterDeclaration(L2Parser.DeclarationContext ctx) {
+        TerminalNode identifier = ctx.identifier().IDENT();
+        checkUndeclared(identifier, data.get(identifier.getText()));
+        VariableStatus status = ctx.expression() == null
+                ? VariableStatus.DECLARED
+                : VariableStatus.INITIALIZED;
+        updateStatus(identifier, status);
+    }
+
+    @Override
+    public void enterIdentifier(L2Parser.IdentifierContext ctx) {
+        TerminalNode identifier = ctx.IDENT();
+        VariableStatus status = data.get(identifier.getText());
+        checkInitialized(identifier, status);
+    }
+
+    private static void checkDeclared(TerminalNode identifier, @Nullable VariableStatus status) {
         if (status == null) {
-            throw new SemanticException("Variable " + name + " must be declared before assignment");
+            throw new SemanticException("Variable " + identifier + " must be declared before assignment");
         }
     }
 
-    private static void checkInitialized(NameTree name, @Nullable VariableStatus status) {
+    private static void checkInitialized(TerminalNode identifier, @Nullable VariableStatus status) {
         if (status == null || status == VariableStatus.DECLARED) {
-            throw new SemanticException("Variable " + name + " must be initialized before use");
+            throw new SemanticException("Variable " + identifier + " must be initialized before use");
         }
     }
 
-    private static void checkUndeclared(NameTree name, @Nullable VariableStatus status) {
+    private static void checkUndeclared(TerminalNode identifier, @Nullable VariableStatus status) {
         if (status != null) {
-            throw new SemanticException("Variable " + name + " is already declared");
+            throw new SemanticException("Variable " + identifier + " is already declared");
         }
     }
 
-    @Override
-    public Unit visit(DeclarationTree declarationTree, Namespace<VariableStatus> data) {
-        checkUndeclared(declarationTree.name(), data.get(declarationTree.name()));
-        VariableStatus status = declarationTree.initializer() == null
-            ? VariableStatus.DECLARED
-            : VariableStatus.INITIALIZED;
-        updateStatus(data, status, declarationTree.name());
-        return NoOpVisitor.super.visit(declarationTree, data);
-    }
-
-    private static void updateStatus(Namespace<VariableStatus> data, VariableStatus status, NameTree name) {
-        data.put(name, status, (existing, replacement) -> {
+    private void updateStatus(TerminalNode identifier, VariableStatus status) {
+        this.data.merge(identifier.getText(), status, (existing, replacement) -> {
             if (existing.ordinal() >= replacement.ordinal()) {
                 throw new SemanticException("variable is already " + existing + ". Cannot be " + replacement + " here.");
             }
             return replacement;
         });
-    }
-
-    @Override
-    public Unit visit(IdentExpressionTree identExpressionTree, Namespace<VariableStatus> data) {
-        VariableStatus status = data.get(identExpressionTree.name());
-        checkInitialized(identExpressionTree.name(), status);
-        return NoOpVisitor.super.visit(identExpressionTree, data);
     }
 
     enum VariableStatus {

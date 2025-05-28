@@ -1,5 +1,8 @@
 package edu.kit.kastel.vads.compiler.ir;
 
+import edu.kit.kastel.vads.compiler.Span;
+import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
+import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.ir.node.Block;
 import edu.kit.kastel.vads.compiler.ir.node.DivNode;
 import edu.kit.kastel.vads.compiler.ir.node.ModNode;
@@ -7,28 +10,17 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
-import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BinaryOperationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BlockTree;
-import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
-import edu.kit.kastel.vads.compiler.parser.ast.StatementTree;
-import edu.kit.kastel.vads.compiler.parser.ast.Tree;
-import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
-import edu.kit.kastel.vads.compiler.parser.symbol.Name;
-import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
+
+import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifier;
+import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.parseInt;
+import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.terminalNode;
 
 /// SSA translation as described in
 /// [`Simple and Efficient Construction of Static Single Assignment Form`](https://compilers.cs.uni-saarland.de/papers/bbhlmz13cc.pdf).
@@ -38,25 +30,25 @@ import java.util.function.BinaryOperator;
 ///
 /// We recommend to read the paper to better understand the mechanics implemented here.
 public class SsaTranslation {
-    private final FunctionTree function;
+    private final L2Parser.ProgramContext program;
     private final GraphConstructor constructor;
 
-    public SsaTranslation(FunctionTree function, Optimizer optimizer) {
-        this.function = function;
-        this.constructor = new GraphConstructor(optimizer, function.name().name().asString());
+    public SsaTranslation(L2Parser.ProgramContext program, Optimizer optimizer) {
+        this.program = program;
+        this.constructor = new GraphConstructor(optimizer, "main");
     }
 
     public IrGraph translate() {
-        var visitor = new SsaTranslationVisitor();
-        this.function.accept(visitor, this);
+        var visitor = new SsaTranslationVisitor(this);
+        this.program.accept(visitor);
         return this.constructor.graph();
     }
 
-    private void writeVariable(Name variable, Block block, Node value) {
+    private void writeVariable(String variable, Block block, Node value) {
         this.constructor.writeVariable(variable, block, value);
     }
 
-    private Node readVariable(Name variable, Block block) {
+    private Node readVariable(String variable, Block block) {
         return this.constructor.readVariable(variable, block);
     }
 
@@ -64,74 +56,79 @@ public class SsaTranslation {
         return this.constructor.currentBlock();
     }
 
-    private static class SsaTranslationVisitor implements Visitor<SsaTranslation, Optional<Node>> {
+    private static class SsaTranslationVisitor extends L2BaseVisitor<Optional<Node>> {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private static final Optional<Node> NOT_AN_EXPRESSION = Optional.empty();
-
+        private final SsaTranslation data;
         private final Deque<DebugInfo> debugStack = new ArrayDeque<>();
 
-        private void pushSpan(Tree tree) {
-            this.debugStack.push(DebugInfoHelper.getDebugInfo());
-            DebugInfoHelper.setDebugInfo(new DebugInfo.SourceInfo(tree.span()));
-        }
-
-        private void popSpan() {
-            DebugInfoHelper.setDebugInfo(this.debugStack.pop());
+        public SsaTranslationVisitor(SsaTranslation data) {
+            this.data = data;
         }
 
         @Override
-        public Optional<Node> visit(AssignmentTree assignmentTree, SsaTranslation data) {
-            pushSpan(assignmentTree);
-            BinaryOperator<Node> desugar = switch (assignmentTree.operator().type()) {
-                case ASSIGN_MINUS -> data.constructor::newSub;
-                case ASSIGN_PLUS -> data.constructor::newAdd;
-                case ASSIGN_MUL -> data.constructor::newMul;
-                case ASSIGN_DIV -> (lhs, rhs) -> projResultDivMod(data, data.constructor.newDiv(lhs, rhs));
-                case ASSIGN_MOD -> (lhs, rhs) -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
-                case ASSIGN -> null;
+        public Optional<Node> visitAssignment(L2Parser.AssignmentContext ctx) {
+            pushSpan(ctx);
+            TerminalNode assignmentOperator = terminalNode(ctx.assignOperator()).orElseThrow();
+
+            BinaryOperator<Node> desugar = switch (assignmentOperator.getSymbol().getType()) {
+                case L2Parser.MINUS_ASSIGN -> data.constructor::newSub;
+                case L2Parser.PLUS_ASSIGN -> data.constructor::newAdd;
+                case L2Parser.TIMES_ASSIGN -> data.constructor::newMul;
+                case L2Parser.DIV_ASSIGN -> (lhs, rhs) -> projResultDivMod(data, data.constructor.newDiv(lhs, rhs));
+                case L2Parser.MOD_ASSIGN -> (lhs, rhs) -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
+                case L2Parser.ASSIGN -> null;
                 default ->
-                    throw new IllegalArgumentException("not an assignment operator " + assignmentTree.operator());
+                        throw new IllegalArgumentException("not an assignment operator " + assignmentOperator.getText());
             };
 
-            switch (assignmentTree.lValue()) {
-                case LValueIdentTree(var name) -> {
-                    Node rhs = assignmentTree.expression().accept(this, data).orElseThrow();
-                    if (desugar != null) {
-                        rhs = desugar.apply(data.readVariable(name.name(), data.currentBlock()), rhs);
-                    }
-                    data.writeVariable(name.name(), data.currentBlock(), rhs);
-                }
+            TerminalNode identifier = identifier(ctx.leftValue());
+            Node rhs = ctx.expression().accept(this).orElseThrow();
+            if (desugar != null) {
+                rhs = desugar.apply(data.readVariable(identifier.getText(), data.currentBlock()), rhs);
             }
+            data.writeVariable(identifier.getText(), data.currentBlock(), rhs);
+
             popSpan();
             return NOT_AN_EXPRESSION;
         }
 
         @Override
-        public Optional<Node> visit(BinaryOperationTree binaryOperationTree, SsaTranslation data) {
-            pushSpan(binaryOperationTree);
-            Node lhs = binaryOperationTree.lhs().accept(this, data).orElseThrow();
-            Node rhs = binaryOperationTree.rhs().accept(this, data).orElseThrow();
-            Node res = switch (binaryOperationTree.operatorType()) {
-                case MINUS -> data.constructor.newSub(lhs, rhs);
-                case PLUS -> data.constructor.newAdd(lhs, rhs);
-                case MUL -> data.constructor.newMul(lhs, rhs);
-                case DIV -> projResultDivMod(data, data.constructor.newDiv(lhs, rhs));
-                case MOD -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
+        public Optional<Node> visitExpression(L2Parser.ExpressionContext ctx) {
+            if (ctx.unaryOperator() != null) {
+                pushSpan(ctx);
+                Node node = ctx.expression(0).accept(this).orElseThrow();
+                Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
+                popSpan();
+                return Optional.of(res);
+            } else if (ctx.binaryOperator() == null) {
+                return super.visitExpression(ctx);
+            }
+            pushSpan(ctx);
+            Node lhs = ctx.expression(0).accept(this).orElseThrow();
+            Node rhs = ctx.expression(1).accept(this).orElseThrow();
+            TerminalNode binaryOperator = terminalNode(ctx.binaryOperator()).orElseThrow();
+            Node res = switch (binaryOperator.getSymbol().getType()) {
+                case L2Parser.MINUS -> data.constructor.newSub(lhs, rhs);
+                case L2Parser.PLUS -> data.constructor.newAdd(lhs, rhs);
+                case L2Parser.TIMES -> data.constructor.newMul(lhs, rhs);
+                case L2Parser.DIV -> projResultDivMod(data, data.constructor.newDiv(lhs, rhs));
+                case L2Parser.MOD -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
                 default ->
-                    throw new IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType());
+                        throw new IllegalArgumentException("not a binary expression operator " + binaryOperator.getText());
             };
             popSpan();
             return Optional.of(res);
         }
 
         @Override
-        public Optional<Node> visit(BlockTree blockTree, SsaTranslation data) {
-            pushSpan(blockTree);
-            for (StatementTree statement : blockTree.statements()) {
-                statement.accept(this, data);
+        public Optional<Node> visitBlock(L2Parser.BlockContext ctx) {
+            pushSpan(ctx);
+            for (L2Parser.StatementContext statement : ctx.statements().statement()) {
+                statement.accept(this);
                 // skip everything after a return in a block
-                if (statement instanceof ReturnTree) {
+                if (statement.control() != null && statement.control().RETURN() != null) {
                     break;
                 }
             }
@@ -140,70 +137,55 @@ public class SsaTranslation {
         }
 
         @Override
-        public Optional<Node> visit(DeclarationTree declarationTree, SsaTranslation data) {
-            pushSpan(declarationTree);
-            if (declarationTree.initializer() != null) {
-                Node rhs = declarationTree.initializer().accept(this, data).orElseThrow();
-                data.writeVariable(declarationTree.name().name(), data.currentBlock(), rhs);
+        public Optional<Node> visitDeclaration(L2Parser.DeclarationContext ctx) {
+            pushSpan(ctx);
+            if (ctx.expression() != null) {
+                Node rhs = ctx.expression().accept(this).orElseThrow();
+                data.writeVariable(ctx.identifier().getText(), data.currentBlock(), rhs);
             }
             popSpan();
             return NOT_AN_EXPRESSION;
         }
 
         @Override
-        public Optional<Node> visit(FunctionTree functionTree, SsaTranslation data) {
-            pushSpan(functionTree);
+        public Optional<Node> visitProgram(L2Parser.ProgramContext ctx) {
+            pushSpan(ctx);
             Node start = data.constructor.newStart();
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start));
-            functionTree.body().accept(this, data);
+            ctx.block().accept(this);
             popSpan();
             return NOT_AN_EXPRESSION;
         }
 
         @Override
-        public Optional<Node> visit(IdentExpressionTree identExpressionTree, SsaTranslation data) {
-            pushSpan(identExpressionTree);
-            Node value = data.readVariable(identExpressionTree.name().name(), data.currentBlock());
+        public Optional<Node> visitIdentifier(L2Parser.IdentifierContext ctx) {
+            pushSpan(ctx);
+            Node value = data.readVariable(ctx.getText(), data.currentBlock());
             popSpan();
             return Optional.of(value);
         }
 
         @Override
-        public Optional<Node> visit(LiteralTree literalTree, SsaTranslation data) {
-            pushSpan(literalTree);
-            Node node = data.constructor.newConstInt((int) literalTree.parseValue().orElseThrow());
+        public Optional<Node> visitIntConstant(L2Parser.IntConstantContext ctx) {
+            pushSpan(ctx);
+            Node node = data.constructor.newConstInt((int) parseInt(ctx).orElseThrow());
             popSpan();
             return Optional.of(node);
         }
 
         @Override
-        public Optional<Node> visit(LValueIdentTree lValueIdentTree, SsaTranslation data) {
+        public Optional<Node> visitLeftValue(L2Parser.LeftValueContext ctx) {
             return NOT_AN_EXPRESSION;
         }
 
         @Override
-        public Optional<Node> visit(NameTree nameTree, SsaTranslation data) {
-            return NOT_AN_EXPRESSION;
-        }
-
-        @Override
-        public Optional<Node> visit(NegateTree negateTree, SsaTranslation data) {
-            pushSpan(negateTree);
-            Node node = negateTree.expression().accept(this, data).orElseThrow();
-            Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
-            popSpan();
-            return Optional.of(res);
-        }
-
-        @Override
-        public Optional<Node> visit(ProgramTree programTree, SsaTranslation data) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Optional<Node> visit(ReturnTree returnTree, SsaTranslation data) {
-            pushSpan(returnTree);
-            Node node = returnTree.expression().accept(this, data).orElseThrow();
+        public Optional<Node> visitControl(L2Parser.ControlContext ctx) {
+            if (ctx.RETURN() == null) {
+                super.visitControl(ctx);
+                return Optional.empty();
+            }
+            pushSpan(ctx);
+            Node node = ctx.expression().accept(this).orElseThrow();
             Node ret = data.constructor.newReturn(node);
             data.constructor.graph().endBlock().addPredecessor(ret);
             popSpan();
@@ -211,7 +193,7 @@ public class SsaTranslation {
         }
 
         @Override
-        public Optional<Node> visit(TypeTree typeTree, SsaTranslation data) {
+        public Optional<Node> visitType(L2Parser.TypeContext ctx) {
             throw new UnsupportedOperationException();
         }
 
@@ -224,6 +206,15 @@ public class SsaTranslation {
             Node projSideEffect = data.constructor.newSideEffectProj(divMod);
             data.constructor.writeCurrentSideEffect(projSideEffect);
             return data.constructor.newResultProj(divMod);
+        }
+
+        private void pushSpan(ParserRuleContext ctx) {
+            this.debugStack.push(DebugInfoHelper.getDebugInfo());
+            DebugInfoHelper.setDebugInfo(new DebugInfo.SourceInfo(Span.fromStartAndEndToken(ctx.getStart(), ctx.getStop())));
+        }
+
+        private void popSpan() {
+            DebugInfoHelper.setDebugInfo(this.debugStack.pop());
         }
     }
 
