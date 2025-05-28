@@ -86,7 +86,7 @@ IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 
 // -------------------- Parser --------------------
 
-program: INT 'main' LPAREN RPAREN block;
+program: INT 'main' LPAREN RPAREN block EOF;
 
 block: LBRACE statements RBRACE;
 
