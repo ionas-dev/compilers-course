@@ -2,6 +2,7 @@ package edu.kit.kastel.vads.compiler;
 
 import edu.kit.kastel.vads.compiler.antlr.L2Lexer;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
+import edu.kit.kastel.vads.compiler.antlr.ThrowingErrorListener;
 import edu.kit.kastel.vads.compiler.backend.common.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.X86Assembler;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
@@ -42,13 +43,13 @@ public class Main {
             program = lexAndParse(input);
             // TODO: Should probably recognize semantic error for test:use-uninitialized-variable
             new SemanticAnalysis(program).analyze();
-        } catch (ParseCancellationException e) {
-            e.printStackTrace();
-            System.exit(42);
-            return;
         } catch (SemanticException e) {
             e.printStackTrace();
             System.exit(7);
+            return;
+        }  catch (RuntimeException e) {
+            e.printStackTrace();
+            System.exit(42);
             return;
         }
         List<IrGraph> graphs = new ArrayList<>();
@@ -87,6 +88,9 @@ public class Main {
 
     private static L2Parser.ProgramContext lexAndParse(Path input) throws IOException, RecognitionException, ParseCancellationException {
         L2Lexer lexer = new L2Lexer(CharStreams.fromPath(input));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new ThrowingErrorListener());
+
         L2Parser parser = new L2Parser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.program();
