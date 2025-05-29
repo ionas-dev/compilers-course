@@ -22,12 +22,16 @@ public class ParserRuleContextUtil {
             ctx = expressionContext.binaryOperatorLine();
         } else if (expressionContext.arithmeticShift() != null) {
             ctx = expressionContext.arithmeticShift();
+        } else if (expressionContext.integerComparison() != null) {
+            ctx = expressionContext.integerComparison();
+        } else if (expressionContext.equality() != null) {
+            ctx = expressionContext.equality();
         } else if (expressionContext.BITAND() != null) {
             return Optional.of(expressionContext.BITAND());
-        } else if (expressionContext.BITOR() != null) {
-            return Optional.of(expressionContext.BITOR());
         } else if (expressionContext.BITXOR() != null) {
             return Optional.of(expressionContext.BITXOR());
+        } else if (expressionContext.BITOR() != null) {
+            return Optional.of(expressionContext.BITOR());
         } else if (expressionContext.LOGAND() != null) {
             return Optional.of(expressionContext.LOGAND());
         } else if (expressionContext.LOGOR() != null) {

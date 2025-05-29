@@ -96,6 +96,7 @@ public class SsaTranslation {
         }
 
         // TODO: Cleaning
+        // TODO: conditional expression
         @Override
         public Optional<Node> visitExpression(L2Parser.ExpressionContext ctx) {
             if (ctx.unaryOperator() != null) {

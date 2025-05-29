@@ -4,7 +4,7 @@ on:
     branches:
       - main
       - master
-      - antlr
+      - working
   pull_request:
 
 jobs:
