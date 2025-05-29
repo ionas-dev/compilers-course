@@ -99,7 +99,7 @@ statement: simple SEMI
     | block
     ;
 
-assignment: leftValue assignOperator expression;
+assignment: <assoc=right>  leftValue assignOperator expression;
 
 simple: assignment
     | declaration
@@ -131,32 +131,42 @@ elseOptional: /* empty */
        | ELSE statement
        ;
 
-booleanConstant: TRUE | FALSE;
-
 expression
     : booleanConstant
     | identifier
     | LPAREN expression RPAREN
     | intConstant
-    | expression binaryOperator expression
-    | unaryOperator expression
-    | expression QUESTION expression COLON expression
+    | <assoc=right> unaryOperator expression
+    | expression binaryOperatorDot expression
+    | expression binaryOperatorLine expression
+    | expression arithmeticShift expression
+    | expression integerComparison expression
+    | expression equality expression
+    | expression BITAND expression
+    | expression BITXOR expression
+    | expression BITOR expression
+    | expression LOGAND expression
+    | expression LOGOR expression
+    | <assoc=right> expression QUESTION expression COLON expression
     ;
 
-intConstant: DECNUM | HEXNUM;
-
 unaryOperator: NOT | BINARY_NOT | MINUS;
+
+binaryOperatorDot: TIMES | DIV | MOD;
+
+binaryOperatorLine: PLUS | MINUS;
+
+arithmeticShift: SHIFT_LEFT | SHRIFT_RIGHT;
+
+integerComparison: LT | LE | GT | GE;
+
+equality: EQ | NEQ;
 
 assignOperator
     : ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
     | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN | SHIFT_LEFT_ASSIGN | SHIFT_RIGHT_ASSIGN
     ;
 
-binaryOperator
-    : PLUS | MINUS | TIMES | DIV | MOD
-    | LT | LE | GT | GE
-    | EQ | NEQ
-    | LOGAND | LOGOR
-    | BITAND | BITXOR | BITOR
-    | SHIFT_LEFT | SHRIFT_RIGHT
-    ;
+booleanConstant: TRUE | FALSE;
+
+intConstant: DECNUM | HEXNUM;

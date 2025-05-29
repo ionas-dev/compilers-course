@@ -18,6 +18,7 @@ import java.util.Deque;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 
+import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.binaryOperator;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifier;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.parseInt;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.terminalNode;
@@ -94,6 +95,7 @@ public class SsaTranslation {
             return NOT_AN_EXPRESSION;
         }
 
+        // TODO: Cleaning
         @Override
         public Optional<Node> visitExpression(L2Parser.ExpressionContext ctx) {
             if (ctx.unaryOperator() != null) {
@@ -103,14 +105,15 @@ public class SsaTranslation {
                 popSpan();
                 return Optional.of(res);
             } else if (ctx.LPAREN() != null && ctx.RPAREN() != null) {
+                // TODO: Maybe add push and pop span
                 return ctx.expression(0).accept(this);
-            } else if (ctx.binaryOperator() == null) {
+            } else if (ctx.expression().size() < 2) {
                 return super.visitExpression(ctx);
             }
             pushSpan(ctx);
             Node lhs = ctx.expression(0).accept(this).orElseThrow();
             Node rhs = ctx.expression(1).accept(this).orElseThrow();
-            TerminalNode binaryOperator = terminalNode(ctx.binaryOperator()).orElseThrow();
+            TerminalNode binaryOperator = binaryOperator(ctx).orElseThrow();
             Node res = switch (binaryOperator.getSymbol().getType()) {
                 case L2Parser.MINUS -> data.constructor.newSub(lhs, rhs);
                 case L2Parser.PLUS -> data.constructor.newAdd(lhs, rhs);
