@@ -1,9 +1,6 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
-import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
-import edu.kit.kastel.vads.compiler.parser.visitor.RecursivePostorderVisitor;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 public class SemanticAnalysis {
@@ -18,7 +15,8 @@ public class SemanticAnalysis {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(new IntegerLiteralRangeAnalysis(), program);
         program.accept(new VariableStatusAnalysis());
-        walker.walk(new ReturnAnalysis(), program);
+        program.accept(new LoopAnalysis());
+        program.accept(new ReturnAnalysis());
     }
 
 }

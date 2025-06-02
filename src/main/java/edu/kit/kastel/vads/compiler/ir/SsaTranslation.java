@@ -131,10 +131,10 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visitBlock(L2Parser.BlockContext ctx) {
             pushSpan(ctx);
-            for (L2Parser.StatementContext statement : ctx.statements().statement()) {
+            for (L2Parser.StatementContext statement : ctx.statement()) {
                 statement.accept(this);
                 // skip everything after a return in a block
-                if (statement.control() != null && statement.control().RETURN() != null) {
+                if (statement.control() != null && statement.control().return_() != null) {
                     break;
                 }
             }
@@ -185,10 +185,7 @@ public class SsaTranslation {
         }
 
         @Override
-        public Optional<Node> visitControl(L2Parser.ControlContext ctx) {
-            if (ctx.RETURN() == null) {
-                return super.visitControl(ctx);
-            }
+        public Optional<Node> visitReturn(L2Parser.ReturnContext ctx) {
             pushSpan(ctx);
             Node node = ctx.expression().accept(this).orElseThrow();
             Node ret = data.constructor.newReturn(node);
@@ -196,7 +193,6 @@ public class SsaTranslation {
             popSpan();
             return NOT_AN_EXPRESSION;
         }
-
         @Override
         public Optional<Node> visitType(L2Parser.TypeContext ctx) {
             throw new UnsupportedOperationException();

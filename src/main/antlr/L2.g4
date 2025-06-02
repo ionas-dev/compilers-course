@@ -90,46 +90,50 @@ program: INT main LPAREN RPAREN block EOF;
 
 main: IDENT {$IDENT.text.equals("main")}?;
 
-block: LBRACE statements RBRACE;
-
-statements: (statement)*;
+block: LBRACE (statement)* RBRACE;
 
 statement: simple SEMI
     | control
     | block
     ;
 
-assignment: <assoc=right>  leftValue assignOperator expression;
+control
+    : if
+    | while
+    | for
+    | continue
+    | break
+    | return
+    ;
 
 simple: assignment
     | declaration
     ;
 
-simpleOptional: /* empty */
+simpleOptional
+    : /* empty */
     | simple
     ;
 
-identifier: IDENT;
+assignment: <assoc=right>  leftValue assignOperator expression;
 
 leftValue: identifier | LPAREN leftValue RPAREN;
 
 declaration: type identifier
     | type identifier ASSIGN expression;
 
-type: INT | BOOL;
+if: IF LPAREN expression RPAREN statement elseOptional;
 
-control
-    : IF LPAREN expression RPAREN statement elseOptional
-    | WHILE LPAREN expression RPAREN statement
-    | FOR LPAREN simpleOptional SEMI expression SEMI simpleOptional RPAREN statement
-    | CONTINUE SEMI
-    | BREAK SEMI
-    | RETURN expression SEMI
+elseOptional
+    : /* empty */
+    | ELSE statement
     ;
 
-elseOptional: /* empty */
-       | ELSE statement
-       ;
+while: WHILE LPAREN expression RPAREN statement;
+
+for: FOR LPAREN simpleOptional SEMI expression SEMI simpleOptional RPAREN statement;
+
+return: RETURN expression SEMI;
 
 expression
     : booleanConstant
@@ -149,6 +153,14 @@ expression
     | expression LOGOR expression
     | <assoc=right> expression QUESTION expression COLON expression
     ;
+
+identifier: IDENT;
+
+type: INT | BOOL;
+
+continue: CONTINUE SEMI;
+
+break: BREAK SEMI;
 
 unaryOperator: NOT | BINARY_NOT | MINUS;
 
