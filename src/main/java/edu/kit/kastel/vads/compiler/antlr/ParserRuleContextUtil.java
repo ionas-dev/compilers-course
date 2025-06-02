@@ -41,7 +41,34 @@ public class ParserRuleContextUtil {
         }
 
         return terminalNode(ctx);
+    }
 
+    public static TerminalNode assignmentOperator(L2Parser.AssignmentContext assignmentContext) {
+        if (assignmentContext.assignOperator().ASSIGN() != null) {
+            return assignmentContext.assignOperator().ASSIGN();
+        } else if (assignmentContext.assignOperator().PLUS_ASSIGN() != null) {
+            return assignmentContext.assignOperator().PLUS_ASSIGN();
+        } else if (assignmentContext.assignOperator().MINUS_ASSIGN() != null) {
+            return assignmentContext.assignOperator().MINUS_ASSIGN();
+        } else if (assignmentContext.assignOperator().TIMES_ASSIGN() != null) {
+            return assignmentContext.assignOperator().TIMES_ASSIGN();
+        } else if (assignmentContext.assignOperator().DIV_ASSIGN() != null) {
+            return assignmentContext.assignOperator().DIV_ASSIGN();
+        } else if (assignmentContext.assignOperator().MOD_ASSIGN() != null) {
+            return assignmentContext.assignOperator().MOD_ASSIGN();
+        } else if (assignmentContext.assignOperator().AND_ASSIGN() != null) {
+            return assignmentContext.assignOperator().AND_ASSIGN();
+        } else if (assignmentContext.assignOperator().XOR_ASSIGN() != null) {
+            return assignmentContext.assignOperator().XOR_ASSIGN();
+        } else if (assignmentContext.assignOperator().OR_ASSIGN() != null) {
+            return assignmentContext.assignOperator().OR_ASSIGN();
+        } else if (assignmentContext.assignOperator().SHIFT_LEFT_ASSIGN() != null) {
+            return assignmentContext.assignOperator().SHIFT_LEFT_ASSIGN();
+        } else if (assignmentContext.assignOperator().SHIFT_RIGHT_ASSIGN() != null) {
+            return assignmentContext.assignOperator().SHIFT_RIGHT_ASSIGN();
+        }
+        assert false : "Assignment operator not implemented";
+        return null;
     }
 
     public static TerminalNode identifier(L2Parser.LeftValueContext ctx) {
