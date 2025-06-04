@@ -71,7 +71,7 @@ public class TypeAnalysis extends L2BaseVisitor<Integer> {
 
         TerminalNode binaryOperator = binaryOperator(ctx);
         Integer requiredType = switch (binaryOperator.getSymbol().getType()) {
-            case L2Parser.PLUS, L2Parser.MINUS, L2Parser.TIMES, L2Parser.SHIFT_LEFT, L2Parser.SHIFT_RIGHT, L2Parser.LT,
+            case L2Parser.PLUS, L2Parser.MINUS, L2Parser.TIMES, L2Parser.DIV, L2Parser.MOD, L2Parser.SHIFT_LEFT, L2Parser.SHIFT_RIGHT, L2Parser.LT,
                  L2Parser.LE, L2Parser.GT, L2Parser.GE, L2Parser.BITAND, L2Parser.BITOR, L2Parser.BITXOR ->
                     L2Parser.INT;
             case L2Parser.EQ, L2Parser.NEQ, L2Parser.LOGAND, L2Parser.LOGOR -> L2Parser.BOOL;
