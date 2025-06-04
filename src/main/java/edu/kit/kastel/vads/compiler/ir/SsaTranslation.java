@@ -95,26 +95,21 @@ public class SsaTranslation {
             return NOT_AN_EXPRESSION;
         }
 
-        // TODO: Cleaning
-        // TODO: conditional expression
         @Override
-        public Optional<Node> visitExpression(L2Parser.ExpressionContext ctx) {
-            if (ctx.unaryOperator() != null) {
-                pushSpan(ctx);
-                Node node = ctx.expression(0).accept(this).orElseThrow();
-                Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
-                popSpan();
-                return Optional.of(res);
-            } else if (ctx.LPAREN() != null && ctx.RPAREN() != null) {
-                // TODO: Maybe add push and pop span
-                return ctx.expression(0).accept(this);
-            } else if (ctx.expression().size() < 2) {
-                return super.visitExpression(ctx);
-            }
+        public Optional<Node> visitUnaryExpression(L2Parser.UnaryExpressionContext ctx) {
+            pushSpan(ctx);
+            Node node = ctx.expression().accept(this).orElseThrow();
+            Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
+            popSpan();
+            return Optional.of(res);
+        }
+
+        @Override
+        public Optional<Node> visitBinaryExpression(L2Parser.BinaryExpressionContext ctx) {
             pushSpan(ctx);
             Node lhs = ctx.expression(0).accept(this).orElseThrow();
             Node rhs = ctx.expression(1).accept(this).orElseThrow();
-            TerminalNode binaryOperator = binaryOperator(ctx).orElseThrow();
+            TerminalNode binaryOperator = binaryOperator(ctx);
             Node res = switch (binaryOperator.getSymbol().getType()) {
                 case L2Parser.MINUS -> data.constructor.newSub(lhs, rhs);
                 case L2Parser.PLUS -> data.constructor.newAdd(lhs, rhs);
@@ -174,7 +169,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visitIntConstant(L2Parser.IntConstantContext ctx) {
             pushSpan(ctx);
-            Node node = data.constructor.newConstInt((int) parseInt(ctx).orElseThrow());
+            Node node = data.constructor.newConstInt((int) parseInt(ctx));
             popSpan();
             return Optional.of(node);
         }

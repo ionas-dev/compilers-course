@@ -1,5 +1,7 @@
 package edu.kit.kastel.vads.compiler.antlr;
 
+import edu.kit.kastel.vads.compiler.parser.ParseException;
+import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -14,8 +16,8 @@ public class ParserRuleContextUtil {
         return ctx.children.stream().filter(TerminalNode.class::isInstance).map(TerminalNode.class::cast).findFirst();
     }
 
-    public static Optional<TerminalNode> binaryOperator(L2Parser.ExpressionContext expressionContext) {
-        ParserRuleContext ctx;
+    public static TerminalNode binaryOperator(L2Parser.BinaryExpressionContext expressionContext) {
+        ParserRuleContext ctx = null;
         if (expressionContext.binaryOperatorDot() != null) {
             ctx = expressionContext.binaryOperatorDot();
         } else if (expressionContext.binaryOperatorLine() != null) {
@@ -27,20 +29,21 @@ public class ParserRuleContextUtil {
         } else if (expressionContext.equality() != null) {
             ctx = expressionContext.equality();
         } else if (expressionContext.BITAND() != null) {
-            return Optional.of(expressionContext.BITAND());
+            return expressionContext.BITAND();
         } else if (expressionContext.BITXOR() != null) {
-            return Optional.of(expressionContext.BITXOR());
+            return expressionContext.BITXOR();
         } else if (expressionContext.BITOR() != null) {
-            return Optional.of(expressionContext.BITOR());
+            return expressionContext.BITOR();
         } else if (expressionContext.LOGAND() != null) {
-            return Optional.of(expressionContext.LOGAND());
+            return expressionContext.LOGAND();
         } else if (expressionContext.LOGOR() != null) {
-            return Optional.of(expressionContext.LOGOR());
-        } else {
-            return Optional.empty();
+            return expressionContext.LOGOR();
         }
 
-        return terminalNode(ctx);
+        assert ctx != null : "Binary operator not implemented";
+        Optional<TerminalNode> terminalNode = terminalNode(ctx);
+        assert terminalNode.isPresent() : "Binary operator not implemented";
+        return terminalNode.get();
     }
 
     public static TerminalNode assignmentOperator(L2Parser.AssignmentContext assignmentContext) {
@@ -71,6 +74,17 @@ public class ParserRuleContextUtil {
         return null;
     }
 
+    public static TerminalNode type(L2Parser.TypeContext typeContext) {
+        if (typeContext.BOOL() != null) {
+            return typeContext.BOOL();
+        } else if (typeContext.INT() != null) {
+            return typeContext.INT();
+        }
+
+        assert false : "Assignment operator not implemented";
+        return null;
+    }
+
     public static TerminalNode identifier(L2Parser.LeftValueContext ctx) {
         if (ctx.identifier() != null) {
             return ctx.identifier().IDENT();
@@ -79,7 +93,7 @@ public class ParserRuleContextUtil {
         }
     }
 
-    public static OptionalLong parseInt(L2Parser.IntConstantContext ctx) {
+    public static long parseInt(L2Parser.IntConstantContext ctx) {
         OptionalLong optional = OptionalLong.empty();
         if (ctx.DECNUM() != null) {
             String value = ctx.DECNUM().getText();
@@ -88,7 +102,10 @@ public class ParserRuleContextUtil {
             String value = ctx.HEXNUM().getText();
             optional = parseHex(value);
         }
-        return optional;
+        if (optional.isEmpty()) {
+            throw new ParseException("invalid integer literal " + ctx.getText());
+        }
+         return optional.getAsLong();
     }
 
     private static OptionalLong parseDec(String value) {

@@ -16,7 +16,9 @@ public class IntegerLiteralRangeAnalysis extends L2BaseListener {
 
     @Override
     public void enterIntConstant(L2Parser.IntConstantContext ctx) {
-        if (parseInt(ctx).isEmpty())
+        try { parseInt(ctx); }
+        catch (Exception e) {
             throw new SemanticException("invalid integer literal " + ctx.getText());
+        }
     }
 }

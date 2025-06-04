@@ -136,22 +136,22 @@ for: FOR LPAREN simpleOptional SEMI expression SEMI simpleOptional RPAREN statem
 return: RETURN expression SEMI;
 
 expression
-    : booleanConstant
-    | identifier
-    | LPAREN expression RPAREN
-    | intConstant
-    | <assoc=right> unaryOperator expression
-    | expression binaryOperatorDot expression
-    | expression binaryOperatorLine expression
-    | expression arithmeticShift expression
-    | expression integerComparison expression
-    | expression equality expression
-    | expression BITAND expression
-    | expression BITXOR expression
-    | expression BITOR expression
-    | expression LOGAND expression
-    | expression LOGOR expression
-    | <assoc=right> expression QUESTION expression COLON expression
+    : booleanConstant # BooleanExpression
+    | identifier # IdentiferExpression
+    | LPAREN expression RPAREN # ParenExpression
+    | intConstant # IntegerExpression
+    | <assoc=right> unaryOperator expression # UnaryExpression
+    | expression binaryOperatorDot expression # BinaryExpression
+    | expression binaryOperatorLine expression # BinaryExpression
+    | expression arithmeticShift expression # BinaryExpression
+    | expression integerComparison expression # BinaryExpression
+    | expression equality expression # BinaryExpression
+    | expression BITAND expression # BinaryExpression
+    | expression BITXOR expression # BinaryExpression
+    | expression BITOR expression # BinaryExpression
+    | expression LOGAND expression # BinaryExpression
+    | expression LOGOR expression # BinaryExpression
+    | <assoc=right> expression QUESTION expression COLON expression # TernaryExpression
     ;
 
 identifier: IDENT;

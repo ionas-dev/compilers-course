@@ -18,6 +18,7 @@ import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifie
 /// - not declared twice
 /// - not initialized twice
 /// - assigned before referenced
+/// TODO: Visit only elaborated syntax to reduce visitors
 class VariableStatusAnalysis extends L2BaseVisitor<Void> {
 
     // maps the depth of control blocks to a mapping of identifier to status
