@@ -63,8 +63,8 @@ public class TypeAnalysis extends L2BaseVisitor<Integer> {
 
     @Override
     public Integer visitBinaryExpression(L2Parser.BinaryExpressionContext ctx) {
-        Integer typeOne = ctx.expression(1).accept(this);
-        Integer typeTwo = ctx.expression(2).accept(this);
+        Integer typeOne = ctx.expression(0).accept(this);
+        Integer typeTwo = ctx.expression(1).accept(this);
         if (!typeOne.equals(typeTwo)) {
             throw new SemanticException("types of lhs and rhs in binary expression wont match for: " + ctx.getText());
         }
