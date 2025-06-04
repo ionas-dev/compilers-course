@@ -1,5 +1,6 @@
 // -------------------- Lexer --------------------
 grammar L2;
+// TODO:Einheitlich machen
 
 // Whitespace and comments
 WHITESPACE: [ \t\r\n]+ -> skip;
@@ -62,9 +63,9 @@ LOGAND: '&&';
 LOGOR: '||';
 
 NOT: '!';
-BINARY_NOT: '~';
+BITNOT: '~';
 SHIFT_LEFT: '<<';
-SHRIFT_RIGHT: '>>';
+SHIFT_RIGHT: '>>';
 
 QUESTION: '?';
 COLON: ':';
@@ -162,13 +163,13 @@ continue: CONTINUE SEMI;
 
 break: BREAK SEMI;
 
-unaryOperator: NOT | BINARY_NOT | MINUS;
+unaryOperator: NOT | BITNOT | MINUS;
 
 binaryOperatorDot: TIMES | DIV | MOD;
 
 binaryOperatorLine: PLUS | MINUS;
 
-arithmeticShift: SHIFT_LEFT | SHRIFT_RIGHT;
+arithmeticShift: SHIFT_LEFT | SHIFT_RIGHT;
 
 integerComparison: LT | LE | GT | GE;
 

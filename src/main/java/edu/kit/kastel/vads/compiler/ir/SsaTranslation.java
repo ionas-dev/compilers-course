@@ -124,6 +124,11 @@ public class SsaTranslation {
         }
 
         @Override
+        public Optional<Node> visitParenExpression(L2Parser.ParenExpressionContext ctx) {
+            return ctx.expression().accept(this);
+        }
+
+        @Override
         public Optional<Node> visitBlock(L2Parser.BlockContext ctx) {
             pushSpan(ctx);
             for (L2Parser.StatementContext statement : ctx.statement()) {
@@ -211,6 +216,11 @@ public class SsaTranslation {
 
         private void popSpan() {
             DebugInfoHelper.setDebugInfo(this.debugStack.pop());
+        }
+
+        @Override
+        protected Optional<Node> defaultResult() {
+            return NOT_AN_EXPRESSION;
         }
     }
 

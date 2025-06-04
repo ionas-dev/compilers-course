@@ -17,6 +17,7 @@ public class SemanticAnalysis {
         program.accept(new VariableStatusAnalysis());
         program.accept(new LoopAnalysis());
         program.accept(new ReturnAnalysis());
+        program.accept(new TypeAnalysis());
     }
 
 }

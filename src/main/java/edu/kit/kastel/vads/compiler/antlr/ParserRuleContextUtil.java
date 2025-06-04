@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+// TODO: Introduce enums for the switches
 public class ParserRuleContextUtil {
 
     public static Optional<TerminalNode> terminalNode(ParserRuleContext ctx) {
@@ -71,6 +72,18 @@ public class ParserRuleContextUtil {
             return assignmentContext.assignOperator().SHIFT_RIGHT_ASSIGN();
         }
         assert false : "Assignment operator not implemented";
+        return null;
+    }
+
+    public static TerminalNode unaryOperator(L2Parser.UnaryExpressionContext ctx) {
+        if (ctx.unaryOperator().MINUS() != null) {
+            return ctx.unaryOperator().MINUS();
+        } else if (ctx.unaryOperator().NOT() != null) {
+            return ctx.unaryOperator().NOT();
+        } else if (ctx.unaryOperator().BITNOT() != null) {
+            return ctx.unaryOperator().BITNOT();
+        }
+        assert false : "Unary operator not implemented";
         return null;
     }
 
