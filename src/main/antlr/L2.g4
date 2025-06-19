@@ -29,6 +29,7 @@ BOOL: 'bool';
 VOID: 'void';
 CHAR: 'char';
 STRING: 'string';
+FLUSH: 'flush';
 
 // Operators
 ASSIGN: '=';
@@ -115,6 +116,7 @@ control
 simple
     : assignment
     | declaration
+    | call
     ;
 
 assignment: <assoc=right>  leftValue assignOperator expression;
@@ -151,7 +153,17 @@ expression
     | left=expression LOGAND right=expression # BinaryExpression
     | left=expression LOGOR right=expression # BinaryExpression
     | <assoc=right> left=expression QUESTION right=expression COLON expression # TernaryExpression
+    | call #CallExpression
     ;
+
+call
+    : PRINT arguments
+    | READ arguments
+    | FLUSH arguments
+    | identifier arguments
+    ;
+
+arguments: LPAREN (expression (COMMA expression)*)? RPAREN;
 
 identifier: IDENT;
 
