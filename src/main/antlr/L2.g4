@@ -87,13 +87,18 @@ IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 
 // -------------------- Parser --------------------
 
-program: INT main LPAREN RPAREN block EOF;
+program: (function)* EOF;
 
-main: IDENT {$IDENT.text.equals("main")}?;
+function: type IDENT parameters block;
+
+parameters: LPAREN ((parameter COMMA)* parameter)? RPAREN;
+
+parameter: type IDENT;
 
 block: LBRACE (statement)* RBRACE;
 
-statement: simple SEMI
+statement
+    : simple SEMI
     | control
     | block
     ;
@@ -107,32 +112,25 @@ control
     | return
     ;
 
-simple: assignment
+simple
+    : assignment
     | declaration
-    ;
-
-simpleOptional
-    : /* empty */
-    | simple
     ;
 
 assignment: <assoc=right>  leftValue assignOperator expression;
 
 leftValue: identifier | LPAREN leftValue RPAREN;
 
-declaration: type identifier
-    | type identifier ASSIGN expression;
-
-if: IF LPAREN expression RPAREN statement elseOptional;
-
-elseOptional
-    : /* empty */
-    | ELSE statement
+declaration
+    : type identifier
+    | type identifier ASSIGN expression
     ;
+
+if: IF LPAREN expression RPAREN ifStatement=statement (ELSE elseStatement=statement)?;
 
 while: WHILE LPAREN expression RPAREN statement;
 
-for: FOR LPAREN simpleOptional SEMI expression SEMI simpleOptional RPAREN statement;
+for: FOR LPAREN (fordeclaration=simple)? SEMI forExpression=expression SEMI (forAssignment=simple)? RPAREN statement;
 
 return: RETURN expression SEMI;
 
@@ -142,17 +140,17 @@ expression
     | LPAREN expression RPAREN # ParenExpression
     | intConstant # IntegerExpression
     | <assoc=right> unaryOperator expression # UnaryExpression
-    | expression binaryOperatorDot expression # BinaryExpression
-    | expression binaryOperatorLine expression # BinaryExpression
-    | expression arithmeticShift expression # BinaryExpression
-    | expression integerComparison expression # BinaryExpression
-    | expression equality expression # BinaryExpression
-    | expression BITAND expression # BinaryExpression
-    | expression BITXOR expression # BinaryExpression
-    | expression BITOR expression # BinaryExpression
-    | expression LOGAND expression # BinaryExpression
-    | expression LOGOR expression # BinaryExpression
-    | <assoc=right> expression QUESTION expression COLON expression # TernaryExpression
+    | left=expression binaryOperatorDot right=expression # BinaryExpression
+    | left=expression binaryOperatorLine riht=expression # BinaryExpression
+    | left=expression arithmeticShift right=expression # BinaryExpression
+    | left=expression integerComparison right=expression # BinaryExpression
+    | left=expression equality right=expression # BinaryExpression
+    | left=expression BITAND right=expression # BinaryExpression
+    | left=expression BITXOR right=expression # BinaryExpression
+    | left=expression BITOR right=expression # BinaryExpression
+    | left=expression LOGAND right=expression # BinaryExpression
+    | left=expression LOGOR right=expression # BinaryExpression
+    | <assoc=right> left=expression QUESTION right=expression COLON expression # TernaryExpression
     ;
 
 identifier: IDENT;
