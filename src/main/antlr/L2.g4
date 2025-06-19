@@ -89,11 +89,11 @@ IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 
 program: (function)* EOF;
 
-function: type IDENT parameters block;
+function: type identifier parameters block;
 
 parameters: LPAREN ((parameter COMMA)* parameter)? RPAREN;
 
-parameter: type IDENT;
+parameter: type identifier;
 
 block: LBRACE (statement)* RBRACE;
 
