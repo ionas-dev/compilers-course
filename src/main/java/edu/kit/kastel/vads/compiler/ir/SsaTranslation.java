@@ -155,6 +155,12 @@ public class SsaTranslation {
 
         @Override
         public Optional<Node> visitProgram(L2Parser.ProgramContext ctx) {
+            ctx.function().forEach(this::visitFunction);
+            return NOT_AN_EXPRESSION;
+        }
+
+        @Override
+        public Optional<Node> visitFunction(L2Parser.FunctionContext ctx) {
             pushSpan(ctx);
             Node start = data.constructor.newStart();
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start));

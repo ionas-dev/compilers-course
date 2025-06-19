@@ -30,6 +30,11 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
     }
 
     @Override
+    public Void visitFunction(L2Parser.FunctionContext ctx) {
+        return ctx.block().accept(this);
+    }
+
+    @Override
     public Void visitAssignment(L2Parser.AssignmentContext ctx) {
         ctx.expression().accept(this);
         TerminalNode identifier = identifier(ctx.leftValue());
@@ -80,8 +85,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
 
     @Override
     public Void visitFor(L2Parser.ForContext ctx) {
-        L2Parser.SimpleContext simpleContext = ctx.simpleOptional(1).simple();
-        if (simpleContext != null && simpleContext.declaration() != null) {
+        if (ctx.forAssignment != null && ctx.forAssignment.declaration() != null) {
             throw new SemanticException("for step must not be a declaration");
         }
         return visitLoop(ctx);

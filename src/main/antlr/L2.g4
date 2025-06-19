@@ -132,7 +132,7 @@ if: IF LPAREN expression RPAREN ifStatement=statement (ELSE elseStatement=statem
 
 while: WHILE LPAREN expression RPAREN statement;
 
-for: FOR LPAREN (fordeclaration=simple)? SEMI forExpression=expression SEMI (forAssignment=simple)? RPAREN statement;
+for: FOR LPAREN (forDeclaration=simple)? SEMI forExpression=expression SEMI (forAssignment=simple)? RPAREN statement;
 
 return: RETURN expression SEMI;
 

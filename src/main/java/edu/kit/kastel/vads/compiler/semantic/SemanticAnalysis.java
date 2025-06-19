@@ -13,6 +13,7 @@ public class SemanticAnalysis {
 
     public void analyze() {
         ParseTreeWalker walker = new ParseTreeWalker();
+        program.accept(new ProgramAnalysis());
         walker.walk(new IntegerLiteralRangeAnalysis(), program);
         program.accept(new VariableStatusAnalysis());
         program.accept(new LoopAnalysis());

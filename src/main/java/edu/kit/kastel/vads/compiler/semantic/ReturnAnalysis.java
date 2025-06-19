@@ -47,21 +47,19 @@ public class ReturnAnalysis extends L2BaseVisitor<Boolean> {
     @Override
     public Boolean visitIf(L2Parser.IfContext ctx) {
         depth++;
-        boolean ifReturns = ctx.statement().accept(this);
-        boolean elseReturns = ctx.elseOptional().accept(this);
+        boolean ifReturns = false;
+        if (ctx.ifStatement != null) {
+            ifReturns = ctx.ifStatement.accept(this);
+        }
+        boolean elseReturns = false;
+        if (ctx.elseStatement != null) {
+            elseReturns = ctx.elseStatement.accept(this);
+        }
         depth--;
         if (depth == 0 && ifReturns && elseReturns) {
             returned = true;
         }
         return ifReturns && elseReturns;
-    }
-
-    @Override
-    public Boolean visitElseOptional(L2Parser.ElseOptionalContext ctx) {
-        if (ctx.statement() != null) {
-            return ctx.statement().accept(this);
-        }
-        return false;
     }
 
     @Override
