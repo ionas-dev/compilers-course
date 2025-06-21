@@ -25,13 +25,13 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
     private final Map<Integer, Map<String, VariableStatus>> status = new HashMap<>();
     private int depth = 0;
 
-    public VariableStatusAnalysis() {
-        status.put(depth, new HashMap<>());
-    }
 
     @Override
     public Void visitFunction(L2Parser.FunctionContext ctx) {
-        return ctx.block().accept(this);
+        depth = 0;
+        status.clear();
+        status.put(depth, new HashMap<>());
+        return super.visitFunction(ctx);
     }
 
     @Override
@@ -53,6 +53,7 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
         return null;
     }
 
+
     @Override
     public Void visitDeclaration(L2Parser.DeclarationContext ctx) {
         TerminalNode identifier = ctx.identifier().IDENT();
@@ -66,11 +67,19 @@ class VariableStatusAnalysis extends L2BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitIdentifier(L2Parser.IdentifierContext ctx) {
-        TerminalNode identifier = ctx.IDENT();
+    public Void visitParameter(L2Parser.ParameterContext ctx) {
+        TerminalNode identifier = ctx.identifier().IDENT();
+        checkUndeclared(identifier, getStatus(depth, identifier.getText()));
+        updateStatus(depth, identifier, VariableStatus.INITIALIZED);
+        return null;
+    }
+
+    @Override
+    public Void visitIdentiferExpression(L2Parser.IdentiferExpressionContext ctx) {
+        TerminalNode identifier = ctx.identifier().IDENT();
         VariableStatus status = getStatus(depth, identifier.getText());
         checkInitialized(identifier, status);
-        return super.visitIdentifier(ctx);
+        return null;
     }
 
     @Override

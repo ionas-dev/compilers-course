@@ -157,10 +157,10 @@ expression
     ;
 
 call
-    : PRINT arguments
-    | READ arguments
-    | FLUSH arguments
-    | identifier arguments
+    : PRINT arguments #PrintCall
+    | READ arguments # ReadCall
+    | FLUSH arguments # FlushCall
+    | identifier arguments #CustomFunctionCall
     ;
 
 arguments: LPAREN (expression (COMMA expression)*)? RPAREN;
