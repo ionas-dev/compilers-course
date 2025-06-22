@@ -1,12 +1,9 @@
-package edu.kit.kastel.vads.compiler.myir.node.fixed;
-
-import edu.kit.kastel.vads.compiler.myir.node.Command;
-import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
+package edu.kit.kastel.vads.compiler.myir.node;
 
 import java.util.Collection;
 import java.util.List;
 
-public final class ReturnNode implements Command<PureExpressionNode> {
+public final class ReturnNode implements Command, EndNode {
 
     private final PureExpressionNode expression;
 
@@ -19,7 +16,7 @@ public final class ReturnNode implements Command<PureExpressionNode> {
     }
 
     @Override
-    public Collection<PureExpressionNode> children() {
+    public List<PureExpressionNode> children() {
         return List.of(expression);
     }
 }

@@ -1,8 +1,5 @@
-package edu.kit.kastel.vads.compiler.myir.node.fixed;
+package edu.kit.kastel.vads.compiler.myir.node;
 
-import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-
-import java.util.Collection;
 import java.util.List;
 
 public final class VariableNode implements PureExpressionNode {
@@ -18,7 +15,7 @@ public final class VariableNode implements PureExpressionNode {
     }
 
     @Override
-    public Collection<PureExpressionNode> children() {
+    public List<Node> children() {
         return List.of();
     }
 }

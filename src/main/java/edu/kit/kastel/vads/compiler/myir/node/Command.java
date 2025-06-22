@@ -1,6 +1,6 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
-public interface Command<T extends PrimitiveNode<?>> extends PrimitiveNode<T> {
+public interface Command extends PrimitiveNode, ProgramExecutionNode {
 
     @Override
     default boolean sideEffect() {

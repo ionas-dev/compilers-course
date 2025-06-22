@@ -1,14 +1,18 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
-import java.util.Collection;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitable;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-public interface Node<K extends Node<?>> extends Visitable {
+import java.util.Collection;
+import java.util.List;
+
+public interface Node extends Visitable {
 
     @Override
-    default <T extends Node<?>> T accept(Visitor<T> visitor) {
+    default <T extends Node> T accept(Visitor<T> visitor) {
         Collection<T> results =  children().stream().map(children -> children.accept(visitor)).toList();
         return visitor.accumulateResults(results);
     }
 
-    Collection<K> children();
+    List<? extends Node>  children();
 }

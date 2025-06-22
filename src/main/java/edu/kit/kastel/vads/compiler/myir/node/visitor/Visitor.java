@@ -1,8 +1,10 @@
-package edu.kit.kastel.vads.compiler.myir.node;
+package edu.kit.kastel.vads.compiler.myir.node.visitor;
+
+import edu.kit.kastel.vads.compiler.myir.node.Node;
 
 import java.util.Collection;
 
-public interface Visitor<T extends Node<?>> {
+public interface Visitor<T extends Node> {
 
     default T accumulateResults(Collection<T> results) {
         if (results.stream().findFirst().isEmpty()) {

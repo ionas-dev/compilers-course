@@ -1,16 +1,17 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
+import java.util.Collection;
 import java.util.List;
 
-public abstract class ConstantNode<T> implements PureExpressionNode {
+public final class LabelNode implements Command, StartNode {
 
-    private final T value;
+    private final String value;
 
-    public ConstantNode(T value) {
+    public LabelNode(String value) {
         this.value = value;
     }
 
-    public T value() {
+    public String value() {
         return value;
     }
 

@@ -143,7 +143,7 @@ expression
     | intConstant # IntegerExpression
     | <assoc=right> unaryOperator expression # UnaryExpression
     | left=expression binaryOperatorDot right=expression # BinaryExpression
-    | left=expression binaryOperatorLine riht=expression # BinaryExpression
+    | left=expression binaryOperatorLine right=expression # BinaryExpression
     | left=expression arithmeticShift right=expression # BinaryExpression
     | left=expression integerComparison right=expression # BinaryExpression
     | left=expression equality right=expression # BinaryExpression
@@ -152,7 +152,7 @@ expression
     | left=expression BITOR right=expression # BinaryExpression
     | left=expression LOGAND right=expression # BinaryExpression
     | left=expression LOGOR right=expression # BinaryExpression
-    | <assoc=right> left=expression QUESTION right=expression COLON expression # TernaryExpression
+    | <assoc=right> ifCondition=expression QUESTION then=expression COLON else=expression # TernaryExpression
     | call #CallExpression
     ;
 

@@ -171,7 +171,13 @@ public class TypeAnalysis extends L2BaseVisitor<OptionalInt> {
             throw new SemanticException("types of lhs and rhs in binary expression wont match type of binary operator for: " + ctx.getText());
         }
 
-        return typeOne;
+        return OptionalInt.of(switch (binaryOperator.getSymbol().getType()) {
+            case L2Parser.PLUS, L2Parser.MINUS, L2Parser.TIMES, L2Parser.DIV, L2Parser.MOD, L2Parser.SHIFT_LEFT, L2Parser.SHIFT_RIGHT, L2Parser.BITAND, L2Parser.BITOR, L2Parser.BITXOR ->
+                    L2Parser.INT;
+            case L2Parser.EQ, L2Parser.NEQ, L2Parser.LOGAND, L2Parser.LOGOR, L2Parser.LT,
+                 L2Parser.LE, L2Parser.GT, L2Parser.GE -> L2Parser.BOOL;
+            default -> throw new SemanticException("unsupported binary operator: " + binaryOperator.getText());
+        });
     }
 
     @Override

@@ -1,18 +1,17 @@
-package edu.kit.kastel.vads.compiler.myir.node.fixed;
+package edu.kit.kastel.vads.compiler.myir.node;
 
-import edu.kit.kastel.vads.compiler.myir.node.Command;
-import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
 
 import java.util.Collection;
 import java.util.List;
 
-public final class Assignment implements Command<PureExpressionNode> {
+public final class AssignmentNode implements Command {
 
     private final VariableNode variable;
 
     private final PureExpressionNode expression;
 
-    public Assignment(VariableNode variable, PureExpressionNode expression) {
+    public AssignmentNode(VariableNode variable, PureExpressionNode expression) {
         this.variable = variable;
         this.expression = expression;
     }
@@ -26,7 +25,7 @@ public final class Assignment implements Command<PureExpressionNode> {
     }
 
     @Override
-    public Collection<PureExpressionNode> children() {
+    public List<PureExpressionNode> children() {
         return List.of(variable, expression);
     }
 }
