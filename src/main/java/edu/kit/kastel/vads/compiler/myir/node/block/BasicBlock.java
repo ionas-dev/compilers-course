@@ -1,8 +1,14 @@
-package edu.kit.kastel.vads.compiler.myir.node;
+package edu.kit.kastel.vads.compiler.myir.node.block;
+
+import edu.kit.kastel.vads.compiler.myir.node.Command;
+import edu.kit.kastel.vads.compiler.myir.node.EndNode;
+import edu.kit.kastel.vads.compiler.myir.node.Node;
+import edu.kit.kastel.vads.compiler.myir.node.StartNode;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;
 
-public final class BasicBlock implements ProgramExecutionNode {
+public final class BasicBlock implements Node {
 
     private final StartNode start;
     private final EndNode end;
@@ -28,5 +34,12 @@ public final class BasicBlock implements ProgramExecutionNode {
     @Override
     public List<Command> children() {
         return commands;
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) {
+        // TODO: Implement method
+        assert false;
+        return null;
     }
 }

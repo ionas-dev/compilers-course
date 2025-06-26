@@ -1,8 +1,7 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
-import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-import java.util.Collection;
 import java.util.List;
 
 public final class AssignmentNode implements Command {
@@ -27,5 +26,10 @@ public final class AssignmentNode implements Command {
     @Override
     public List<PureExpressionNode> children() {
         return List.of(variable, expression);
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) {
+        return visitor.visitAssignment(this);
     }
 }

@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
-import java.util.Collection;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
+
 import java.util.List;
 
 public final class IfNode implements Command {
@@ -17,7 +18,7 @@ public final class IfNode implements Command {
         return expression;
     }
 
-    public JumpNode IfJump() {
+    public JumpNode ifJump() {
         return ifJump;
     }
 
@@ -25,5 +26,10 @@ public final class IfNode implements Command {
     @Override
     public List<PrimitiveNode> children() {
         return List.of(expression, ifJump);
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) {
+        return visitor.visitIf(this);
     }
 }

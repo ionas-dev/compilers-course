@@ -1,10 +1,11 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public final class CallAssignmentNode implements Command {
-
 
     private final VariableNode variable;
 
@@ -26,11 +27,19 @@ public final class CallAssignmentNode implements Command {
         return identifier;
     }
 
+    public List<PureExpressionNode> parameters() {
+        return parameters;
+    }
     @Override
     public List<PureExpressionNode> children() {
         List<PureExpressionNode> children = new ArrayList<>();
         children.add(variable);
         children.addAll(parameters);
         return children;
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) {
+        return visitor.visitCallAssignment(this);
     }
 }

@@ -3,6 +3,7 @@ package edu.kit.kastel.vads.compiler.myir;
 import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.Command;
@@ -10,7 +11,7 @@ import edu.kit.kastel.vads.compiler.myir.node.IfNode;
 import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
 import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
-import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
+import edu.kit.kastel.vads.compiler.myir.node.Program;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
@@ -19,7 +20,7 @@ import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpression;
+import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
@@ -44,19 +45,19 @@ import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.identifie
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.parseInt;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.unaryOperator;
 
-public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequence> {
+public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
     private IRTreeTranslator() {
     }
 
     @Nullable
     private ParserRuleContext currentLoopCtx = null;
 
-    public static Collection<ProgramNode<Command>> fromAST(L2Parser.ProgramContext program) {
+    public static Collection<Program> fromAST(L2Parser.ProgramContext program) {
         IRTreeTranslator tree = new IRTreeTranslator();
         return program.function().stream()
                 .map(tree::visitFunction)
                 .map(NodeSequence::commands)
-                .map(commands -> new ProgramNode<>(commands, (LabelNode) commands.getFirst(), (ReturnNode) commands.getLast()))
+                .map(Program::new)
                 .toList();
     }
 
@@ -82,7 +83,7 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     @Override
     public NodeSequence visitDeclaration(L2Parser.DeclarationContext ctx) {
         if (ctx.expression() == null) {
-            return new NodeSequence(List.of());
+            return new NodeSequence();
         }
         return new NodeSequence(assignmentCommands(ctx.identifier().getText(), ctx.expression()));
     }
@@ -94,7 +95,7 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
             case L2Parser.PLUS_ASSIGN -> binaryAssignmentNodes(ctx, AddExpressionNode.class);
             case L2Parser.MINUS_ASSIGN -> binaryAssignmentNodes(ctx, SubtractExpressionNode.class);
             case L2Parser.TIMES_ASSIGN -> binaryAssignmentNodes(ctx, MultiplyExpressionNode.class);
-            case L2Parser.DIV_ASSIGN -> binaryAssignmentNodes(ctx, DivisionExpression.class);
+            case L2Parser.DIV_ASSIGN -> binaryAssignmentNodes(ctx, DivisionExpressionNode.class);
             case L2Parser.MOD_ASSIGN -> binaryAssignmentNodes(ctx, ModuloExpressionNode.class);
             case L2Parser.AND_ASSIGN -> binaryAssignmentNodes(ctx, BitwiseAndExpressionNode.class);
             case L2Parser.OR_ASSIGN -> binaryAssignmentNodes(ctx, BitwiseOrExpressionNode.class);
@@ -110,21 +111,21 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     @Override
     public NodeSequence visitUnaryExpression(L2Parser.UnaryExpressionContext ctx) {
         NodeSequence expressionNodes = ctx.expression().accept(this);
-        assert expressionNodes.pureExpressionNode.isPresent();
+        assert expressionNodes.pureExpressionNode().isPresent();
 
         return switch (unaryOperator(ctx).getSymbol().getType()) {
             case L2Parser.MINUS -> {
-                SubtractExpressionNode subtractExpressionNode = new SubtractExpressionNode(new IntegerConstantNode(0), expressionNodes.pureExpressionNode.get());
-                yield new NodeSequence(expressionNodes.commands, subtractExpressionNode);
+                SubtractExpressionNode subtractExpressionNode = new SubtractExpressionNode(new IntegerConstantNode(0), expressionNodes.pureExpressionNode().get());
+                yield new NodeSequence(expressionNodes.commands(), subtractExpressionNode);
             }
             case L2Parser.NOT -> {
-                VariableNode temporaryVariable = temporaryVariableNode(ctx);
+                VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
                 List<Command> commands = conditionalCommands(expressionNodes, List.of(new AssignmentNode(temporaryVariable, new BooleanConstantNode(false))), List.of(new AssignmentNode(temporaryVariable, new BooleanConstantNode(true))), ctx);
                 yield new NodeSequence(commands, temporaryVariable);
             }
             case L2Parser.BITNOT -> {
-                BitwiseXorExpressionNode bitwiseXorExpressionNode = new BitwiseXorExpressionNode(new IntegerConstantNode(-1), expressionNodes.pureExpressionNode.get());
-                yield new NodeSequence(expressionNodes.commands, bitwiseXorExpressionNode);
+                BitwiseXorExpressionNode bitwiseXorExpressionNode = new BitwiseXorExpressionNode(new IntegerConstantNode(-1), expressionNodes.pureExpressionNode().get());
+                yield new NodeSequence(expressionNodes.commands(), bitwiseXorExpressionNode);
             }
             default -> throw new IllegalStateException("Unexpected value: " + unaryOperator(ctx).getSymbol().getType());
         };
@@ -136,7 +137,7 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
             case L2Parser.PLUS -> binaryExpressionNodes(ctx, AddExpressionNode.class);
             case L2Parser.MINUS -> binaryExpressionNodes(ctx, SubtractExpressionNode.class);
             case L2Parser.TIMES -> binaryExpressionNodes(ctx, MultiplyExpressionNode.class);
-            case L2Parser.DIV -> binaryExpressionNodes(ctx, DivisionExpression.class);
+            case L2Parser.DIV -> binaryExpressionNodes(ctx, DivisionExpressionNode.class);
             case L2Parser.MOD -> binaryExpressionNodes(ctx, ModuloExpressionNode.class);
             case L2Parser.BITXOR -> binaryExpressionNodes(ctx, BitwiseXorExpressionNode.class);
             case L2Parser.BITAND -> binaryExpressionNodes(ctx, BitwiseAndExpressionNode.class);
@@ -161,8 +162,8 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     @Override
     public NodeSequence visitIf(L2Parser.IfContext ctx) {
         NodeSequence ifNodes = ctx.expression().accept(this);
-        List<Command> thenCommands = ctx.ifStatement.accept(this).commands;
-        List<Command> elseCommands = ctx.elseStatement != null ? ctx.elseStatement.accept(this).commands : List.of();
+        List<Command> thenCommands = ctx.ifStatement.accept(this).commands();
+        List<Command> elseCommands = ctx.elseStatement != null ? ctx.elseStatement.accept(this).commands() : List.of();
 
         return new NodeSequence(conditionalCommands(ifNodes, thenCommands, elseCommands, ctx));
     }
@@ -177,19 +178,19 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
         String conditionLabel = ".condition" + ctx.hashCode();
 
         NodeSequence conditionalExpressionNodes = ctx.forExpression.accept(this);
-        assert conditionalExpressionNodes.pureExpressionNode.isPresent();
+        assert conditionalExpressionNodes.pureExpressionNode().isPresent();
 
         List<Command> commands = new ArrayList<>();
-        commands.addAll(ctx.forDeclaration.accept(this).commands);
-        commands.addAll(conditionalExpressionNodes.commands);
-        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode.get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
+        commands.addAll(ctx.forDeclaration.accept(this).commands());
+        commands.addAll(conditionalExpressionNodes.commands());
+        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
 
         commands.add(new LabelNode(loopLabel));
-        commands.addAll(ctx.statement().accept(this).commands);
-        commands.addAll(ctx.forAssignment.accept(this).commands);
+        commands.addAll(ctx.statement().accept(this).commands());
+        commands.addAll(ctx.forAssignment.accept(this).commands());
 
         commands.add(new LabelNode(conditionLabel));
-        commands.add(new IfNode(conditionalExpressionNodes.pureExpressionNode.get(), new JumpNode(loopLabel)));
+        commands.add(new IfNode(conditionalExpressionNodes.pureExpressionNode().get(), new JumpNode(loopLabel)));
 
         commands.add(new LabelNode(finishLabel));
 
@@ -207,17 +208,17 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
         String conditionLabel = ".condition" + ctx.hashCode();
 
         NodeSequence conditionalExpressionNodes = ctx.expression().accept(this);
-        assert conditionalExpressionNodes.pureExpressionNode.isPresent();
+        assert conditionalExpressionNodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(conditionalExpressionNodes.commands);
+        List<Command> commands = new ArrayList<>(conditionalExpressionNodes.commands());
 
-        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode.get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
+        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
 
         commands.add(new LabelNode(loopLabel));
-        commands.addAll(ctx.statement().accept(this).commands);
+        commands.addAll(ctx.statement().accept(this).commands());
 
         commands.add(new LabelNode(conditionLabel));
-        commands.add(new IfNode(conditionalExpressionNodes.pureExpressionNode.get(), new JumpNode(loopLabel)));
+        commands.add(new IfNode(conditionalExpressionNodes.pureExpressionNode().get(), new JumpNode(loopLabel)));
 
         commands.add(new LabelNode(finishLabel));
 
@@ -249,22 +250,22 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     @Override
     public NodeSequence visitBreak(L2Parser.BreakContext ctx) {
         assert currentLoopCtx != null;
-        return new NodeSequence(List.of(new JumpNode(".finish" + ctx.hashCode())));
+        return new NodeSequence(new JumpNode(".finish" + ctx.hashCode()));
     }
 
     @Override
     public NodeSequence visitContinue(L2Parser.ContinueContext ctx) {
         assert currentLoopCtx != null;
-        return new NodeSequence(List.of(new JumpNode(".condition" + ctx.hashCode())));
+        return new NodeSequence(new JumpNode(".condition" + ctx.hashCode()));
     }
 
     @Override
     public NodeSequence visitReturn(L2Parser.ReturnContext ctx) {
         NodeSequence nodes = ctx.expression().accept(this);
-        assert nodes.pureExpressionNode.isPresent();
+        assert nodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(nodes.commands);
-        commands.add(new ReturnNode(nodes.pureExpressionNode.get()));
+        List<Command> commands = new ArrayList<>(nodes.commands());
+        commands.add(new ReturnNode(nodes.pureExpressionNode().get()));
         return new NodeSequence(commands);
     }
 
@@ -273,17 +274,17 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
         NodeSequence ifConditionNodes = ctx.ifCondition.accept(this);
 
         NodeSequence thenExpressionNodes = ctx.then.accept(this);
-        assert thenExpressionNodes.pureExpressionNode.isPresent();
+        assert thenExpressionNodes.pureExpressionNode().isPresent();
 
         NodeSequence elseExpressionNodes = ctx.else_.accept(this);
-        assert elseExpressionNodes.pureExpressionNode.isPresent();
+        assert elseExpressionNodes.pureExpressionNode().isPresent();
 
-        VariableNode temporaryVariable = temporaryVariableNode(ctx);
+        VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
 
-        thenExpressionNodes.commands.add(new AssignmentNode(temporaryVariable, thenExpressionNodes.pureExpressionNode.get()));
-        elseExpressionNodes.commands.add(new AssignmentNode(temporaryVariable, elseExpressionNodes.pureExpressionNode.get()));
+        thenExpressionNodes.commands().add(new AssignmentNode(temporaryVariable, thenExpressionNodes.pureExpressionNode().get()));
+        elseExpressionNodes.commands().add(new AssignmentNode(temporaryVariable, elseExpressionNodes.pureExpressionNode().get()));
 
-        List<Command> commands = conditionalCommands(ifConditionNodes, thenExpressionNodes.commands, elseExpressionNodes.commands, ctx);
+        List<Command> commands = conditionalCommands(ifConditionNodes, thenExpressionNodes.commands(), elseExpressionNodes.commands(), ctx);
         return new NodeSequence(commands, temporaryVariable);
     }
 
@@ -304,33 +305,33 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
 
     @Override
     protected NodeSequence aggregateResult(NodeSequence aggregate, NodeSequence nextResult) {
-        List<Command> commands = new ArrayList<>(aggregate.commands);
-        commands.addAll(nextResult.commands);
+        List<Command> commands = new ArrayList<>(aggregate.commands());
+        commands.addAll(nextResult.commands());
 
-        assert aggregate.pureExpressionNode.isEmpty() || nextResult.pureExpressionNode.isEmpty();
-        Optional<PureExpressionNode> pureExpressionNode = aggregate.pureExpressionNode.isPresent()
-                ? aggregate.pureExpressionNode
-                : nextResult.pureExpressionNode;
+        assert aggregate.pureExpressionNode().isEmpty() || nextResult.pureExpressionNode().isEmpty();
+        Optional<PureExpressionNode> pureExpressionNode = aggregate.pureExpressionNode().isPresent()
+                ? aggregate.pureExpressionNode()
+                : nextResult.pureExpressionNode();
 
         return new NodeSequence(commands, pureExpressionNode);
     }
 
     @Override
     protected NodeSequence defaultResult() {
-        return new NodeSequence(List.of());
+        return new NodeSequence();
     }
 
     private NodeSequence callNodes(String identifier, L2Parser.ArgumentsContext ctx) {
         List<Command> commands = new ArrayList<>();
         List<PureExpressionNode> argumentNodes = new ArrayList<>();
-        VariableNode temporaryVariable = temporaryVariableNode(ctx);
+        VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
 
         for (L2Parser.ExpressionContext expressionContext : ctx.expression()) {
             NodeSequence expressionNodes = expressionContext.accept(this);
-            assert expressionNodes.pureExpressionNode.isPresent();
+            assert expressionNodes.pureExpressionNode().isPresent();
 
-            commands.addAll(expressionNodes.commands);
-            argumentNodes.add(expressionNodes.pureExpressionNode.get());
+            commands.addAll(expressionNodes.commands());
+            argumentNodes.add(expressionNodes.pureExpressionNode().get());
         }
 
         commands.add(new CallAssignmentNode(temporaryVariable, identifier, argumentNodes));
@@ -338,7 +339,7 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     }
 
     private NodeSequence logicalAndNodes(NodeSequence leftExpressionNodes, NodeSequence rightExpressionNodes, L2Parser.BinaryExpressionContext ctx) {
-        VariableNode temporaryVariable = temporaryVariableNode(ctx);
+        VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
 
         List<Command> commands = conditionalCommands(
                 leftExpressionNodes,
@@ -356,19 +357,19 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     private NodeSequence binaryExpressionNodes(L2Parser.BinaryExpressionContext ctx, Class<? extends BinaryExpressionNode> binaryExpression) {
         NodeSequence leftExpressionNodes = ctx.left.accept(this);
         NodeSequence rightExpressionNodes = ctx.right.accept(this);
-        assert leftExpressionNodes.pureExpressionNode.isPresent() && rightExpressionNodes.pureExpressionNode.isPresent();
+        assert leftExpressionNodes.pureExpressionNode().isPresent() && rightExpressionNodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(leftExpressionNodes.commands);
-        commands.addAll(rightExpressionNodes.commands);
+        List<Command> commands = new ArrayList<>(leftExpressionNodes.commands());
+        commands.addAll(rightExpressionNodes.commands());
 
         try {
-            BinaryExpressionNode binaryExpressionNode = binaryExpression.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(leftExpressionNodes.pureExpressionNode.get(), rightExpressionNodes.pureExpressionNode.get());
+            BinaryExpressionNode binaryExpressionNode = binaryExpression.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(leftExpressionNodes.pureExpressionNode().get(), rightExpressionNodes.pureExpressionNode().get());
             Optional<PureExpressionNode> pureExpressionNode = Optional.empty();
 
             if (binaryExpressionNode instanceof PureExpressionNode) {
                 pureExpressionNode = Optional.of((PureExpressionNode) binaryExpressionNode);
             } else if (binaryExpressionNode instanceof Command) {
-                VariableNode temporaryVariable = temporaryVariableNode(ctx);
+                VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
                 commands.add(new BinaryAssignmentNode(temporaryVariable, binaryExpressionNode));
                 pureExpressionNode = Optional.of(temporaryVariable);
             } else {
@@ -385,26 +386,26 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
 
     private List<Command> binaryAssignmentNodes(L2Parser.AssignmentContext ctx, Class<? extends BinaryExpressionNode> BinaryExpressionNode) {
         NodeSequence expressionNodes = ctx.expression().accept(this);
-        assert expressionNodes.pureExpressionNode.isPresent();
+        assert expressionNodes.pureExpressionNode().isPresent();
 
         VariableNode variableNode = new VariableNode(identifier(ctx.leftValue()).getText());
         BinaryExpressionNode binaryExpressionNode = null;
         try {
-            binaryExpressionNode = BinaryExpressionNode.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(variableNode, expressionNodes.pureExpressionNode.get());
+            binaryExpressionNode = BinaryExpressionNode.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(variableNode, expressionNodes.pureExpressionNode().get());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             assert false;
         }
 
-        List<Command> commands = new ArrayList<>(expressionNodes.commands);
+        List<Command> commands = new ArrayList<>(expressionNodes.commands());
         commands.add(new BinaryAssignmentNode(variableNode, binaryExpressionNode));
         return commands;
     }
 
     private NodeSequence logicalOrNodes(NodeSequence leftExpressionNodes, NodeSequence rightExpressionNodes, L2Parser.BinaryExpressionContext ctx) {
-        assert leftExpressionNodes.pureExpressionNode.isPresent() && rightExpressionNodes.pureExpressionNode.isPresent();
+        assert leftExpressionNodes.pureExpressionNode().isPresent() && rightExpressionNodes.pureExpressionNode().isPresent();
 
-        VariableNode temporaryVariable = temporaryVariableNode(ctx);
+        VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
 
         List<Command> commands = conditionalCommands(
                 leftExpressionNodes,
@@ -419,17 +420,13 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
         return new NodeSequence(commands, temporaryVariable);
     }
 
-    private VariableNode temporaryVariableNode(ParserRuleContext ctx) {
-        return new VariableNode("tmp" + ctx.hashCode());
-    }
-
     private List<Command> conditionalCommands(NodeSequence ifNodes, List<Command> thenNodes, List<Command> elseNodes, ParserRuleContext ctx) {
         String thenLabelValue = ".if" + ctx.hashCode();
         String finishLabelValue = ".finish" + ctx.hashCode();
 
-        List<Command> nodes = new ArrayList<>(ifNodes.commands);
-        assert ifNodes.pureExpressionNode.isPresent();
-        nodes.add(new IfNode(ifNodes.pureExpressionNode.get(), new JumpNode(thenLabelValue)));
+        List<Command> nodes = new ArrayList<>(ifNodes.commands());
+        assert ifNodes.pureExpressionNode().isPresent();
+        nodes.add(new IfNode(ifNodes.pureExpressionNode().get(), new JumpNode(thenLabelValue)));
 
         nodes.addAll(elseNodes);
         nodes.add(new JumpNode(finishLabelValue));
@@ -444,26 +441,10 @@ public class IRTreeTranslator extends L2BaseVisitor<IRTreeTranslator.NodeSequenc
     private List<Command> assignmentCommands(String identifier, L2Parser.ExpressionContext ctx) {
         VariableNode variable = new VariableNode(identifier);
         NodeSequence expressionNodes = ctx.accept(this);
-        assert expressionNodes.pureExpressionNode.isPresent();
+        assert expressionNodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(expressionNodes.commands);
-        commands.add(new AssignmentNode(variable, expressionNodes.pureExpressionNode.get()));
+        List<Command> commands = new ArrayList<>(expressionNodes.commands());
+        commands.add(new AssignmentNode(variable, expressionNodes.pureExpressionNode().get()));
         return commands;
-    }
-
-    public record NodeSequence(List<Command> commands, Optional<PureExpressionNode> pureExpressionNode) {
-
-        public NodeSequence(PureExpressionNode pureExpressionNode) {
-            this(List.of(), Optional.of(pureExpressionNode));
-        }
-
-        public NodeSequence(List<Command> commands) {
-            this(commands, Optional.empty());
-        }
-
-        public NodeSequence(List<Command> commands, PureExpressionNode pureExpressionNode) {
-            this(commands, Optional.of(pureExpressionNode));
-        }
-
     }
 }

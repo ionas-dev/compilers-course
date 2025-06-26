@@ -1,13 +1,9 @@
-package edu.kit.kastel.vads.compiler.myir;
+package edu.kit.kastel.vads.compiler.myir.node;
 
-import edu.kit.kastel.vads.compiler.myir.node.Command;
-import edu.kit.kastel.vads.compiler.myir.node.Node;
-import edu.kit.kastel.vads.compiler.myir.node.PrimitiveNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;
-import java.util.function.BinaryOperator;
 
 public class BinaryAssignmentNode implements Command {
 
@@ -31,5 +27,10 @@ public class BinaryAssignmentNode implements Command {
     @Override
     public List<PrimitiveNode> children() {
         return List.of(variableNode, binaryExpressionNode);
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) {
+        return visitor.visitBinaryAssignment(this);
     }
 }
