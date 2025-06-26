@@ -1,11 +1,10 @@
 package edu.kit.kastel.vads.compiler.myir.node.binop;
 
-import edu.kit.kastel.vads.compiler.myir.node.Command;
-import edu.kit.kastel.vads.compiler.myir.node.Node;
+import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-public final class DivisionExpressionNode extends BinaryExpressionNode implements Command {
+public final class DivisionExpressionNode extends BinaryExpressionNode implements CommandNode {
 
     public DivisionExpressionNode(PureExpressionNode left, PureExpressionNode right) {
         super(left, right);

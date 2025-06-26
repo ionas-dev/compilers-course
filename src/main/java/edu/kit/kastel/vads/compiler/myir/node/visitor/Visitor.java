@@ -8,7 +8,7 @@ import edu.kit.kastel.vads.compiler.myir.node.IfNode;
 import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
 import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
-import edu.kit.kastel.vads.compiler.myir.node.Program;
+import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
@@ -125,7 +125,7 @@ public interface Visitor<T> {
         return node.accept(this);
     }
 
-    default T visitProgram(Program node) {
+    default T visitProgram(ProgramNode node) {
         return node.accept(this);
     }
 

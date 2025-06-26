@@ -2,10 +2,9 @@ package edu.kit.kastel.vads.compiler.myir.node;
 
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-import java.util.Collection;
 import java.util.List;
 
-public final class LabelNode implements Command, StartNode {
+public final class LabelNode implements CommandNode, StartNode {
 
     private final String value;
 

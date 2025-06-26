@@ -4,7 +4,7 @@ import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;
 
-public final class IfNode implements Command {
+public final class IfNode implements CommandNode {
 
     private final PureExpressionNode expression;
     private final JumpNode ifJump;

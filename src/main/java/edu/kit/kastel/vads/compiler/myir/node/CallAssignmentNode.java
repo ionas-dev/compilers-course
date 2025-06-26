@@ -5,7 +5,7 @@ import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class CallAssignmentNode implements Command {
+public final class CallAssignmentNode implements CommandNode {
 
     private final VariableNode variable;
 

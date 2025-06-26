@@ -1,6 +1,6 @@
 package edu.kit.kastel.vads.compiler.myir.node.block;
 
-import edu.kit.kastel.vads.compiler.myir.node.Command;
+import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
 import edu.kit.kastel.vads.compiler.myir.node.EndNode;
 import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.StartNode;
@@ -12,9 +12,9 @@ public final class BasicBlock implements Node {
 
     private final StartNode start;
     private final EndNode end;
-    private final List<Command> commands;
+    private final List<CommandNode> commands;
 
-    public BasicBlock(List<Command> commands) {
+    public BasicBlock(List<CommandNode> commands) {
         assert commands.getFirst() instanceof StartNode : "First command of a BasicBlock must be a StartNode";
         assert commands.getLast() instanceof EndNode : "Last command of a BasicBlock must be an EndNode";
 
@@ -32,7 +32,7 @@ public final class BasicBlock implements Node {
     }
 
     @Override
-    public List<Command> children() {
+    public List<CommandNode> children() {
         return commands;
     }
 

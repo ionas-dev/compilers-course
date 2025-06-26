@@ -4,12 +4,12 @@ import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;
 
-public class Program implements Node {
-    private final List<Command> children;
+public class ProgramNode implements Node {
+    private final List<CommandNode> children;
     private final LabelNode start;
     private final ReturnNode end;
 
-    public Program(List<Command> children) {
+    public ProgramNode(List<CommandNode> children) {
         this.children = children;
         assert !children.isEmpty() && children.getFirst() instanceof LabelNode;
         assert !children.isEmpty() && children.getLast() instanceof ReturnNode;
@@ -27,7 +27,7 @@ public class Program implements Node {
     }
 
     @Override
-    public List<Command> children() {
+    public List<CommandNode> children() {
         return children;
     }
 

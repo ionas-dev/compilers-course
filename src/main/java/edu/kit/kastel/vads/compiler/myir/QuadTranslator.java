@@ -4,13 +4,12 @@ import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.Command;
+import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
 import edu.kit.kastel.vads.compiler.myir.node.IfNode;
 import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
 import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
-import edu.kit.kastel.vads.compiler.myir.node.Node;
-import edu.kit.kastel.vads.compiler.myir.node.Program;
+import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
@@ -37,8 +36,8 @@ import java.util.List;
 
 public class QuadTranslator implements Visitor<NodeSequence> {
 
-    public static Program fromProgram(Program program) {
-        Program program1 = new Program(program.accept(new QuadTranslator()).commands());
+    public static ProgramNode fromProgram(ProgramNode program) {
+        ProgramNode program1 = new ProgramNode(program.accept(new QuadTranslator()).commands());
         return program1;
     }
 
@@ -140,7 +139,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
     @Override
     public NodeSequence visitBinaryAssignment(BinaryAssignmentNode node) {
         NodeSequence nodes = node.binaryExpressionNode().accept(this);
-        List<Command> commands = new ArrayList<>(nodes.commands());
+        List<CommandNode> commands = new ArrayList<>(nodes.commands());
         if (nodes.pureExpressionNode().isPresent()) {
             commands.add(new AssignmentNode(node.variableNode(), nodes.pureExpressionNode().get()));
         } else {
@@ -156,7 +155,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         NodeSequence nodes = node.expression().accept(this);
         assert nodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(nodes.commands());
+        List<CommandNode> commands = new ArrayList<>(nodes.commands());
         if (!commands.isEmpty() && commands.getLast() instanceof AssignmentNode) {
             AssignmentNode temporaryAssignment = (AssignmentNode) commands.removeLast();
             commands.add(new AssignmentNode(node.variable(), temporaryAssignment.expression()));
@@ -171,7 +170,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
     public NodeSequence visitCallAssignment(CallAssignmentNode node) {
         List<NodeSequence> nodeSequences = node.parameters().stream().map(this::visitPureExpression).toList();
 
-        List<Command> commands = new ArrayList<>();
+        List<CommandNode> commands = new ArrayList<>();
         List<PureExpressionNode> parameters = new ArrayList<>();
         for (NodeSequence nodes : nodeSequences) {
             assert nodes.pureExpressionNode().isPresent();
@@ -188,7 +187,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         NodeSequence nodes = node.expression().accept(this);
         assert nodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(nodes.commands());
+        List<CommandNode> commands = new ArrayList<>(nodes.commands());
         commands.add(new IfNode(nodes.pureExpressionNode().get(), node.ifJump()));
 
         return new NodeSequence(commands);
@@ -199,17 +198,17 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         NodeSequence nodes = node.expression().accept(this);
         assert nodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(nodes.commands());
+        List<CommandNode> commands = new ArrayList<>(nodes.commands());
         commands.add(new ReturnNode(nodes.pureExpressionNode().get()));
 
         return new NodeSequence(commands);
     }
 
     @Override
-    public NodeSequence visitProgram(Program node) {
-        List<Command> commands = new ArrayList<>();
+    public NodeSequence visitProgram(ProgramNode node) {
+        List<CommandNode> commands = new ArrayList<>();
 
-        for (Command command: node.children()) {
+        for (CommandNode command: node.children()) {
             NodeSequence nodes = command.accept(this);
             commands.addAll(nodes.commands());
         }
@@ -217,17 +216,17 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         return new NodeSequence(commands);
     }
 
-    public <T extends BinaryExpressionNode & Command> NodeSequence visitBinaryExpressionCommand(T node) {
+    public <T extends BinaryExpressionNode & CommandNode> NodeSequence visitBinaryExpressionCommand(T node) {
         NodeSequence leftNodes = node.left().accept(this);
         assert leftNodes.pureExpressionNode().isPresent();
 
         NodeSequence rightNodes = node.left().accept(this);
         assert rightNodes.pureExpressionNode().isPresent();
 
-        List<Command> commands = new ArrayList<>(leftNodes.commands());
+        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
         commands.addAll(rightNodes.commands());
         try {
-            commands.add((Command) node.getClass()
+            commands.add((CommandNode) node.getClass()
                     .getConstructor(PureExpressionNode.class, PureExpressionNode.class)
                     .newInstance(leftNodes.pureExpressionNode().get(), rightNodes.pureExpressionNode().get()));
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -242,7 +241,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         NodeSequence leftNodes =  node.left().accept(this);
         NodeSequence rightNodes = node.right().accept(this);
 
-        List<Command> commands = new ArrayList<>(leftNodes.commands());
+        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
         commands.addAll(rightNodes.commands());
 
         assert leftNodes.pureExpressionNode().isPresent();
