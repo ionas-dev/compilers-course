@@ -1,12 +1,9 @@
 package edu.kit.kastel.vads.compiler.antlr;
 
 import edu.kit.kastel.vads.compiler.parser.ParseException;
-import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 

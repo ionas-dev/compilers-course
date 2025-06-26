@@ -1,6 +1,5 @@
 package edu.kit.kastel.vads.compiler.myir.node.binop;
 
-import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 

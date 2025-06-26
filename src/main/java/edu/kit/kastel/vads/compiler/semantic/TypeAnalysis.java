@@ -3,16 +3,12 @@ package edu.kit.kastel.vads.compiler.semantic;
 import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.binaryOperator;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.type;

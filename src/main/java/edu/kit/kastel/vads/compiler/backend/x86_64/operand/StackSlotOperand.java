@@ -2,7 +2,6 @@ package edu.kit.kastel.vads.compiler.backend.x86_64.operand;
 
 import edu.kit.kastel.vads.compiler.backend.common.operand.PhysicalOperand;
 import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
-import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 
 import java.util.Objects;
 

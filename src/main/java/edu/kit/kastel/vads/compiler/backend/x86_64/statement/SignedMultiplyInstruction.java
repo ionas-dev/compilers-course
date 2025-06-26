@@ -1,7 +1,7 @@
 package edu.kit.kastel.vads.compiler.backend.x86_64.statement;
 
-import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
+import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
 
 public final class SignedMultiplyInstruction implements X86Statement {
 
