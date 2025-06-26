@@ -10,7 +10,13 @@ public class ReturnAnalysis extends L2BaseVisitor<Boolean> {
 
     @Override
     public Boolean visitProgram(L2Parser.ProgramContext ctx) {
-        super.visitProgram(ctx);
+        return super.visitProgram(ctx);
+    }
+
+    @Override
+    public Boolean visitFunction(L2Parser.FunctionContext ctx) {
+        returned = false;
+        super.visitFunction(ctx);
         if (!returned) {
             throw new SemanticException("at least one control flow does not return");
         }
@@ -36,6 +42,7 @@ public class ReturnAnalysis extends L2BaseVisitor<Boolean> {
     public Boolean visitDeclaration(L2Parser.DeclarationContext ctx) {
         return super.visitDeclaration(ctx);
     }
+
     @Override
     public Boolean visitStatement(L2Parser.StatementContext ctx) {
         if (returned) {
