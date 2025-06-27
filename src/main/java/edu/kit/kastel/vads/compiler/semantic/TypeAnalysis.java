@@ -16,29 +16,27 @@ import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.unaryOper
 
 public class TypeAnalysis extends L2BaseVisitor<OptionalInt> {
 
-    private record FunctionType(List<Integer> parameterTypes, int returnType) {}
+    private record FunctionType(List<Integer> parameterTypes, int returnType, Map<String, Integer> variables) { }
 
     private final Map<String, FunctionType> functionTypes = new HashMap<>();
     private String currentFunctionName = "";
-
-    private final Map<String, Integer> functionVariableTypes = new HashMap<>();
 
     @Override
     public OptionalInt visitProgram(L2Parser.ProgramContext ctx) {
         for (L2Parser.FunctionContext functionContext : ctx.function()) {
             currentFunctionName = functionContext.identifier().IDENT().getText();
-            functionVariableTypes.clear();
 
             int returnType = type(functionContext.type()).getSymbol().getType();
 
+            Map<String, Integer> variables = new HashMap<>();
             List<Integer> parameterTypes = new ArrayList<>();
             for (L2Parser.ParameterContext parameterContext: functionContext.parameters().parameter()) {
                 int parameterType = type(parameterContext.type()).getSymbol().getType();
-                functionVariableTypes.put(parameterContext.identifier().IDENT().getText(), parameterType);
+                variables.put(parameterContext.identifier().IDENT().getText(), parameterType);
                 parameterTypes.add(parameterType);
             }
 
-            functionTypes.put(currentFunctionName, new FunctionType(parameterTypes, returnType));
+            functionTypes.put(currentFunctionName, new FunctionType(parameterTypes, returnType, variables));
         }
 
         return super.visitProgram(ctx);
@@ -60,7 +58,7 @@ public class TypeAnalysis extends L2BaseVisitor<OptionalInt> {
                 throw new SemanticException("types of identifier and expression wont match for: " + ctx.getText());
             }
         }
-        functionVariableTypes.put(name, requiredType);
+        functionTypes.get(currentFunctionName).variables().put(name, requiredType);
         return OptionalInt.empty();
     }
 
@@ -214,7 +212,7 @@ public class TypeAnalysis extends L2BaseVisitor<OptionalInt> {
 
     @Override
     public OptionalInt visitIdentifier(L2Parser.IdentifierContext ctx) {
-        return OptionalInt.of(functionVariableTypes.get(ctx.getText()));
+        return OptionalInt.of(functionTypes.get(currentFunctionName).variables().get(ctx.getText()));
     }
 
     @Override

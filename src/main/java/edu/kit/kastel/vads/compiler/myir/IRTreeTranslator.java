@@ -52,7 +52,7 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
     @Nullable
     private ParserRuleContext currentLoopCtx = null;
 
-    public static Collection<ProgramNode> fromAST(L2Parser.ProgramContext program) {
+    public static Collection<ProgramNode> translate(L2Parser.ProgramContext program) {
         IRTreeTranslator tree = new IRTreeTranslator();
         return program.function().stream()
                 .map(tree::visitFunction)

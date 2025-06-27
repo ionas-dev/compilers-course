@@ -36,7 +36,7 @@ import java.util.List;
 
 public class QuadTranslator implements Visitor<NodeSequence> {
 
-    public static ProgramNode fromProgram(ProgramNode program) {
+    public static ProgramNode translate(ProgramNode program) {
         ProgramNode program1 = new ProgramNode(program.accept(new QuadTranslator()).commands());
         return program1;
     }
