@@ -8,7 +8,9 @@ import edu.kit.kastel.vads.compiler.myir.node.IfNode;
 import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
 import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
 import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
+import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
@@ -25,6 +27,7 @@ import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.block.BasicBlock;
 
 import java.util.Collection;
 
@@ -35,6 +38,14 @@ public interface Visitor<T> {
             throw new RuntimeException("No result provided.");
         }
         return results.stream().findFirst().get();
+    }
+
+    default T visitNode(Node node) {
+        return node.accept(this);
+    }
+
+    default T visitBasicBlock(BasicBlock node) {
+        return node.accept(this);
     }
 
     default T visitAssignment(AssignmentNode node) {

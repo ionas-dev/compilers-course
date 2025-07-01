@@ -46,7 +46,7 @@ import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.parseInt;
 import static edu.kit.kastel.vads.compiler.antlr.ParserRuleContextUtil.unaryOperator;
 
 public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
-    private IRTreeTranslator() {
+    public IRTreeTranslator() {
     }
 
     @Nullable
@@ -68,9 +68,6 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
         List<CommandNode> commands = new ArrayList<>();
         commands.add(functionLabel);
         commands.addAll(ctx.block().statement().stream().map(this::visitStatement).map(NodeSequence::commands).flatMap(Collection::stream).toList());
-
-        assert commands.getFirst() instanceof LabelNode;
-        assert commands.getLast() instanceof ReturnNode;
 
         return new NodeSequence(commands);
     }
@@ -421,12 +418,13 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
     }
 
     private List<CommandNode> conditionalCommands(NodeSequence ifNodes, List<CommandNode> thenNodes, List<CommandNode> elseNodes, ParserRuleContext ctx) {
-        String thenLabelValue = ".if" + ctx.hashCode();
+        String thenLabelValue = ".then" + ctx.hashCode();
         String finishLabelValue = ".finish" + ctx.hashCode();
 
         List<CommandNode> nodes = new ArrayList<>(ifNodes.commands());
         assert ifNodes.pureExpressionNode().isPresent();
         nodes.add(new IfNode(ifNodes.pureExpressionNode().get(), new JumpNode(thenLabelValue)));
+        nodes.add(new LabelNode(".else" + ctx.hashCode()));
 
         nodes.addAll(elseNodes);
         nodes.add(new JumpNode(finishLabelValue));

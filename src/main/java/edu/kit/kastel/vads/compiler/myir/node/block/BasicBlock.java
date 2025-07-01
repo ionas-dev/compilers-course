@@ -38,8 +38,6 @@ public final class BasicBlock implements Node {
 
     @Override
     public <T> T accept(Visitor<T> visitor) {
-        // TODO: Implement method
-        assert false;
-        return null;
+        return visitor.visitBasicBlock(this);
     }
 }
