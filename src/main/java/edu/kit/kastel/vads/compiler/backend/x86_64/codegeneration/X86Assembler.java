@@ -1,14 +1,15 @@
-package edu.kit.kastel.vads.compiler.backend.x86_64.codegen;
+package edu.kit.kastel.vads.compiler.backend.x86_64.codegeneration;
 
 import edu.kit.kastel.vads.compiler.backend.common.codegen.CodeGenerator;
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 import edu.kit.kastel.vads.compiler.backend.common.regalloc.VirtualOperandAllocator;
 import edu.kit.kastel.vads.compiler.backend.common.statement.Statement;
 import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
-import edu.kit.kastel.vads.compiler.backend.x86_64.instructionsel.InstructionSelector;
+import edu.kit.kastel.vads.compiler.backend.x86_64.instructionselection.InstructionSelector;
+import edu.kit.kastel.vads.compiler.backend.x86_64.instructionselection.SSAInstructionSelection;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.ImmediateOperand;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.Register;
-import edu.kit.kastel.vads.compiler.backend.x86_64.regalloc.RegisterAllocator;
+import edu.kit.kastel.vads.compiler.backend.x86_64.registerallocation.RegisterAllocator;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.CallInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.EmptyStatement;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.GlobalDirective;
@@ -19,6 +20,7 @@ import edu.kit.kastel.vads.compiler.backend.x86_64.statement.TextDirective;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.X86Statement;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.node.Node;
+import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,18 +34,7 @@ public class X86Assembler implements CodeGenerator {
 
     @Override
     public String generateCode(List<IrGraph> program) throws UnsupportedOperationException {
-        List<X86Statement> instructions = new ArrayList<>(List.of(
-                new GlobalDirective("main"),
-                new GlobalDirective("_main"),
-                new TextDirective(),
-                new EmptyStatement(),
-                new Label("main"),
-                new CallInstruction("_main"),
-                new EmptyStatement(),
-                new MoveInstruction(Register.ACCUMULATOR, Register.DESTINATION_INDEX, BitSize.BIT64),
-                new MoveInstruction(new ImmediateOperand(0x3c), Register.ACCUMULATOR, BitSize.BIT64),
-                new SyscallInstruction())
-        );
+        List<X86Statement> instructions = template();
 
         for (IrGraph graph : program) {
             instructions.add(new EmptyStatement());
@@ -57,5 +48,35 @@ public class X86Assembler implements CodeGenerator {
                 .filter(instruction -> !(instruction instanceof MoveInstruction) || !((MoveInstruction) instruction).source().equals(((MoveInstruction) instruction).target()))
                 .map(Statement::toCode)
                 .collect(Collectors.joining("\n"));
+    }
+
+    @Override
+    public String generateCodeByProgramNodes(List<ProgramNode> programs) throws UnsupportedOperationException {
+        List<X86Statement> instructions = template();
+
+        for (ProgramNode programNode : programs) {
+            instructions.add(new EmptyStatement());
+            instructions.addAll(SSAInstructionSelection.translate(programNode));
+        }
+
+        return registerAllocator.allocateRegisters(instructions).stream()
+                .filter(instruction -> !(instruction instanceof MoveInstruction) || !((MoveInstruction) instruction).source().equals(((MoveInstruction) instruction).target()))
+                .map(Statement::toCode)
+                .collect(Collectors.joining("\n"));
+    }
+
+    private List<X86Statement> template() {
+        return new ArrayList<>(List.of(
+                new GlobalDirective("main"),
+                new GlobalDirective("_main"),
+                new TextDirective(),
+                new EmptyStatement(),
+                new Label("main"),
+                new CallInstruction("_main"),
+                new EmptyStatement(),
+                new MoveInstruction(Register.ACCUMULATOR, Register.DESTINATION_INDEX, BitSize.BIT64),
+                new MoveInstruction(new ImmediateOperand(0x3c), Register.ACCUMULATOR, BitSize.BIT64),
+                new SyscallInstruction())
+        );
     }
 }

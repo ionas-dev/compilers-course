@@ -5,7 +5,7 @@ import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;
 
 import java.util.Objects;
 
-public record ImmediateOperand(int value) implements PhysicalOperand {
+public record ImmediateOperand(long value) implements PhysicalOperand {
 
     @Override
     public String toCode(BitSize size) {

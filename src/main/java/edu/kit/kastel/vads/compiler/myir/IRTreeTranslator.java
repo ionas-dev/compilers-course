@@ -64,7 +64,7 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
 
     @Override
     public NodeSequence visitFunction(L2Parser.FunctionContext ctx) {
-        LabelNode functionLabel = new LabelNode(ctx.identifier().getText() + "_entry");
+        LabelNode functionLabel = new LabelNode("_" + ctx.identifier().getText());
         List<CommandNode> commands = new ArrayList<>();
         commands.add(functionLabel);
         commands.addAll(ctx.block().statement().stream().map(this::visitStatement).map(NodeSequence::commands).flatMap(Collection::stream).toList());

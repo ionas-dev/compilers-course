@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.backend.x86_64.regalloc;
+package edu.kit.kastel.vads.compiler.backend.x86_64.registerallocation;
 
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 import edu.kit.kastel.vads.compiler.backend.common.operand.PhysicalOperand;
@@ -118,7 +118,8 @@ public class RegisterAllocator {
                     }
                         validStatements.add(statement);
                 }
-                 case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
+                case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _ , SignExtendInstruction _, SignedDivisionInstruction _, SignedMultiplyInstruction _, TextDirective _ -> validStatements.add(statement);
+                default -> throw new IllegalStateException("Unexpected state: " + statement);
             }
         }
 

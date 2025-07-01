@@ -3,7 +3,7 @@ package edu.kit.kastel.vads.compiler.myir.node.binop;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-public class BitwiseOrExpressionNode extends BinaryExpressionNode implements PureExpressionNode {
+public final class BitwiseOrExpressionNode extends BinaryExpressionNode implements PureExpressionNode {
     public BitwiseOrExpressionNode(PureExpressionNode left, PureExpressionNode right) {
         super(left, right);
     }

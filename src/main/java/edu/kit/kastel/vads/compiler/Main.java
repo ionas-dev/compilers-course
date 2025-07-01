@@ -4,29 +4,26 @@ import edu.kit.kastel.vads.compiler.antlr.L2Lexer;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
 import edu.kit.kastel.vads.compiler.antlr.ThrowingErrorListener;
 import edu.kit.kastel.vads.compiler.backend.common.codegen.CodeGenerator;
-import edu.kit.kastel.vads.compiler.backend.x86_64.codegen.X86Assembler;
+import edu.kit.kastel.vads.compiler.backend.x86_64.codegeneration.X86Assembler;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
-import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
-import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
 import edu.kit.kastel.vads.compiler.ir.util.YCompPrinter;
+import edu.kit.kastel.vads.compiler.myir.IRTreeTranslator;
+import edu.kit.kastel.vads.compiler.myir.QuadTranslator;
+import edu.kit.kastel.vads.compiler.myir.SSATranslator;
+import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis;
 import edu.kit.kastel.vads.compiler.semantic.SemanticException;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.InputMismatchException;
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -38,11 +35,11 @@ public class Main {
         }
         Path input = Path.of(args[0]);
         Path output = Path.of(args[1]);
-        L2Parser.ProgramContext program;
+        L2Parser.ProgramContext programCtx;
         try {
-            program = lexAndParse(input);
+            programCtx = lexAndParse(input);
             // TODO: Should probably recognize semantic error for test:use-uninitialized-variable
-            new SemanticAnalysis(program).analyze();
+            new SemanticAnalysis(programCtx).analyze();
         } catch (SemanticException e) {
             e.printStackTrace();
             System.exit(7);
@@ -52,21 +49,28 @@ public class Main {
             System.exit(42);
             return;
         }
-        List<IrGraph> graphs = new ArrayList<>();
-        SsaTranslation translation = new SsaTranslation(program, new LocalValueNumbering());
-        graphs.add(translation.translate());
 
-        if ("vcg".equals(System.getenv("DUMP_GRAPHS")) || "vcg".equals(System.getProperty("dumpGraphs"))) {
-            Path tmp = output.toAbsolutePath().resolveSibling("graphs");
-            Files.createDirectory(tmp);
-            for (IrGraph graph : graphs) {
-                dumpGraph(graph, tmp, "before-codegen");
-            }
-        }
+        Collection<ProgramNode> programNodes = IRTreeTranslator.translate(programCtx).stream()
+                .map(QuadTranslator::translate)
+                .map(SSATranslator::translate)
+                .toList();
+
+
+//        List<IrGraph> graphs = new ArrayList<>();
+//        SsaTranslation translation = new SsaTranslation(program, new LocalValueNumbering());
+//        graphs.add(translation.translate());
+//
+//        if ("vcg".equals(System.getenv("DUMP_GRAPHS")) || "vcg".equals(System.getProperty("dumpGraphs"))) {
+//            Path tmp = output.toAbsolutePath().resolveSibling("graphs");
+//            Files.createDirectory(tmp);
+//            for (IrGraph graph : graphs) {
+//                dumpGraph(graph, tmp, "before-codegen");
+//            }
+//        }
 
         CodeGenerator generator = new X86Assembler();
         try {
-            String s = generator.generateCode(graphs);
+            String s = generator.generateCodeByProgramNodes(programNodes.stream().toList());
             Path asmOutput = Path.of(output + ".s");
             Files.writeString(asmOutput, s);
             println("Generated asm file: ", asmOutput.toAbsolutePath().toString());

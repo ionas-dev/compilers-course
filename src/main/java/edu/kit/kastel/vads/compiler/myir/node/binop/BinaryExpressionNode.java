@@ -6,7 +6,7 @@ import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 
 import java.util.List;
 
-public abstract class BinaryExpressionNode implements PrimitiveNode {
+public abstract sealed class BinaryExpressionNode implements PrimitiveNode permits AddExpressionNode, BitwiseAndExpressionNode, BitwiseOrExpressionNode, BitwiseXorExpressionNode, DivisionExpressionNode, EqualExpressionNode, GreaterThanExpressionNode, LessThanExpressionNode, ModuloExpressionNode, MultiplyExpressionNode, NotEqualExpressionNode, ShiftLeftExpressionNode, ShiftRightExpressionNode, SubtractExpressionNode {
 
     private final PureExpressionNode left;
     private final PureExpressionNode right;

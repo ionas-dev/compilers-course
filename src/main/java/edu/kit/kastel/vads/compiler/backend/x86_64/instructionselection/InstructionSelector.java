@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.backend.x86_64.instructionsel;
+package edu.kit.kastel.vads.compiler.backend.x86_64.instructionselection;
 
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 import edu.kit.kastel.vads.compiler.backend.common.util.BitSize;

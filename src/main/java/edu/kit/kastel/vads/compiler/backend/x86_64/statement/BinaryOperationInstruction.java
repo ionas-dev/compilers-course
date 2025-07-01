@@ -55,7 +55,14 @@ public final class BinaryOperationInstruction implements X86Statement {
 
     public enum Operation {
         ADD("add"),
-        SUB("sub");
+        SUB("sub"),
+        SHIFT_RIGHT("sar"),
+        SHIFT_LEFT("sal"),
+        XOR("xor"),
+        AND("and"),
+        OR("or");
+
+
 
         private final String value;
 

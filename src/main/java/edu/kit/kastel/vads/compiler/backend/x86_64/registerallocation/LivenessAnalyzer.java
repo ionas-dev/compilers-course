@@ -1,4 +1,4 @@
-package edu.kit.kastel.vads.compiler.backend.x86_64.regalloc;
+package edu.kit.kastel.vads.compiler.backend.x86_64.registerallocation;
 
 import edu.kit.kastel.vads.compiler.backend.common.operand.Operand;
 import edu.kit.kastel.vads.compiler.backend.x86_64.operand.ImmediateOperand;
@@ -57,6 +57,7 @@ public class LivenessAnalyzer {
                 case CallInstruction _, Comment _, EmptyStatement _, GlobalDirective _, Label _, SyscallInstruction _,
                      TextDirective _ -> {
                 }
+                default -> throw new IllegalStateException("Unexpected value: " + instruction);
             }
 
             liveIn.computeIfAbsent(line - 1, _ -> new HashSet<>()).addAll(liveIn.get(line));

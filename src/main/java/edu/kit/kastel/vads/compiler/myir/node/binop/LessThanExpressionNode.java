@@ -3,7 +3,7 @@ package edu.kit.kastel.vads.compiler.myir.node.binop;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-public class LessThanExpressionNode  extends BinaryExpressionNode implements PureExpressionNode {
+public final class LessThanExpressionNode  extends BinaryExpressionNode implements PureExpressionNode {
     public LessThanExpressionNode(PureExpressionNode left, PureExpressionNode right) {
         super(left, right);
     }
