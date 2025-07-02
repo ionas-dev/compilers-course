@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> {
 
-    private final Map<VariableNode, Operand> registers = new HashMap<>();
+    private final Map<String, Operand> registers = new HashMap<>();
     private int registerCounter = 0;
 
     public SSAInstructionSelection() {
@@ -234,7 +234,7 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
             case IntegerConstantNode integerConstantNode -> new ImmediateOperand(integerConstantNode.value());
             case BooleanConstantNode booleanConstantNode -> new ImmediateOperand(booleanConstantNode.value() ? 1L : 0L);
             case VariableNode variableNode ->
-                    registers.computeIfAbsent(variableNode, _ -> new VirtualOperand(registerCounter++));
+                    registers.computeIfAbsent(variableNode.name(), _ -> new VirtualOperand(registerCounter++));
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
     }
