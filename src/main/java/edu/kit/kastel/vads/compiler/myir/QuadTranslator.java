@@ -92,12 +92,7 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         assert nodes.pureExpressionNode().isPresent();
 
         List<CommandNode> commands = new ArrayList<>(nodes.commands());
-        if (!commands.isEmpty() && commands.getLast() instanceof AssignmentNode) {
-            AssignmentNode temporaryAssignment = (AssignmentNode) commands.removeLast();
-            commands.add(new AssignmentNode(node.variable(), temporaryAssignment.expression()));
-        } else {
-            commands.add(new AssignmentNode(node.variable(), nodes.pureExpressionNode().get()));
-        }
+        commands.add(new AssignmentNode(node.variable(), nodes.pureExpressionNode().get()));
 
         return new NodeSequence(commands);
     }
