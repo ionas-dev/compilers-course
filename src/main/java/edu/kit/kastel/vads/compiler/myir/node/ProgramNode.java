@@ -1,10 +1,12 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;
 
-public class ProgramNode implements Node {
+public final class ProgramNode implements Node {
     private final List<CommandNode> children;
     private final LabelNode start;
     private final ReturnNode end;

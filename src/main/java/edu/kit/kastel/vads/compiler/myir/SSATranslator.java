@@ -1,39 +1,24 @@
 package edu.kit.kastel.vads.compiler.myir;
 
-import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
-import edu.kit.kastel.vads.compiler.myir.node.IfNode;
-import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
-import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
 import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ModuloExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.MultiplyExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.block.BasicBlock;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.CallAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IfNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.JumpNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.VariableNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -86,10 +71,12 @@ public class SSATranslator implements Visitor<Node> {
         int assignedVariableCount = getCount(node.variableNode());
         VariableNode assignedVariable = new VariableNode(node.variableNode().name() + "_" + assignedVariableCount + 1);
 
-        BinaryExpressionNode expression = (BinaryExpressionNode) node.binaryExpressionNode().accept(this);
+        PureExpressionNode leftExpression = visitRightSidePureExpression(node.leftExpression());
+        PureExpressionNode rightExpression = visitRightSidePureExpression(node.rightExpression());
+
 
         variablesCounter.put(node.variableNode().name(), assignedVariableCount + 1);
-        return new BinaryAssignmentNode(assignedVariable, expression);
+        return new BinaryAssignmentNode(assignedVariable, leftExpression, rightExpression, node.binaryExpressionType());
     }
 
     @Override
@@ -146,76 +133,6 @@ public class SSATranslator implements Visitor<Node> {
         return node;
     }
 
-    @Override
-    public Node visitAddExpression(AddExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitSubtractExpression(SubtractExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitMultiplyExpression(MultiplyExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitDivisionExpression(DivisionExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitModuloExpression(ModuloExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitBitwiseAndExpression(BitwiseAndExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitBitwiseOrExpression(BitwiseOrExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitBitwiseXorExpression(BitwiseXorExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitEqualExpression(EqualExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitNotEqualExpression(NotEqualExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitGreaterThanExpression(GreaterThanExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitLessThanExpression(LessThanExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitShiftLeft(ShiftLeftExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
-    @Override
-    public Node visitShiftRight(ShiftRightExpressionNode node) {
-        return visitBinaryExpression(node);
-    }
-
     private PureExpressionNode visitRightSidePureExpression(PureExpressionNode node) {
         if (node instanceof VariableNode variable) {
             int parameterVariableCount = getCount(variable);
@@ -224,18 +141,12 @@ public class SSATranslator implements Visitor<Node> {
         return (PureExpressionNode) node.accept(this);
     }
 
-    private BinaryExpressionNode visitBinaryExpression(BinaryExpressionNode node) {
+    @Override
+    public BinaryExpressionNode visitBinaryExpression(BinaryExpressionNode node) {
         PureExpressionNode leftExpression = visitRightSidePureExpression(node.left());
-
         PureExpressionNode rightExpression = visitRightSidePureExpression(node.right());
 
-        try {
-            return node.getClass().getConstructor(PureExpressionNode.class, PureExpressionNode.class)
-                    .newInstance(leftExpression, rightExpression);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            assert false;
-        }
-        return null;
+        return new BinaryExpressionNode(leftExpression, rightExpression, node.type());
     }
 
     private int getCount(VariableNode variable) {

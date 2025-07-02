@@ -2,38 +2,23 @@ package edu.kit.kastel.vads.compiler.myir;
 
 import edu.kit.kastel.vads.compiler.antlr.L2BaseVisitor;
 import edu.kit.kastel.vads.compiler.antlr.L2Parser;
-import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
-import edu.kit.kastel.vads.compiler.myir.node.IfNode;
-import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
-import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ModuloExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.MultiplyExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.CallAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IfNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.JumpNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.VariableNode;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -89,16 +74,24 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
     public NodeSequence visitAssignment(L2Parser.AssignmentContext ctx) {
         List<CommandNode> commands = switch (assignmentOperator(ctx).getSymbol().getType()) {
             case L2Parser.ASSIGN -> assignmentCommands(identifier(ctx.leftValue()).getText(), ctx.expression());
-            case L2Parser.PLUS_ASSIGN -> binaryAssignmentNodes(ctx, AddExpressionNode.class);
-            case L2Parser.MINUS_ASSIGN -> binaryAssignmentNodes(ctx, SubtractExpressionNode.class);
-            case L2Parser.TIMES_ASSIGN -> binaryAssignmentNodes(ctx, MultiplyExpressionNode.class);
-            case L2Parser.DIV_ASSIGN -> binaryAssignmentNodes(ctx, DivisionExpressionNode.class);
-            case L2Parser.MOD_ASSIGN -> binaryAssignmentNodes(ctx, ModuloExpressionNode.class);
-            case L2Parser.AND_ASSIGN -> binaryAssignmentNodes(ctx, BitwiseAndExpressionNode.class);
-            case L2Parser.OR_ASSIGN -> binaryAssignmentNodes(ctx, BitwiseOrExpressionNode.class);
-            case L2Parser.XOR_ASSIGN -> binaryAssignmentNodes(ctx, BitwiseXorExpressionNode.class);
-            case L2Parser.SHIFT_RIGHT -> binaryAssignmentNodes(ctx, ShiftRightExpressionNode.class);
-            case L2Parser.SHIFT_LEFT -> binaryAssignmentNodes(ctx, ShiftLeftExpressionNode.class);
+            case L2Parser.PLUS_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.ADDITION);
+            case L2Parser.MINUS_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SUBTRACTION);
+            case L2Parser.TIMES_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.MULTIPLICATION);
+            case L2Parser.DIV_ASSIGN -> binaryAssignmentNodes(ctx, BinaryAssignmentNode.BinaryExpressionType.DIVISION);
+            case L2Parser.MOD_ASSIGN -> binaryAssignmentNodes(ctx, BinaryAssignmentNode.BinaryExpressionType.MODULO);
+            case L2Parser.AND_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_AND);
+            case L2Parser.OR_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_OR);
+            case L2Parser.XOR_ASSIGN ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_XOR);
+            case L2Parser.SHIFT_RIGHT ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SHIFT_RIGHT);
+            case L2Parser.SHIFT_LEFT ->
+                    pureBinaryAssignmentNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SHIFT_LEFT);
             default ->
                     throw new IllegalStateException("Unexpected value: " + assignmentOperator(ctx).getSymbol().getType());
         };
@@ -112,7 +105,7 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
 
         return switch (unaryOperator(ctx).getSymbol().getType()) {
             case L2Parser.MINUS -> {
-                SubtractExpressionNode subtractExpressionNode = new SubtractExpressionNode(new IntegerConstantNode(0), expressionNodes.pureExpressionNode().get());
+                BinaryExpressionNode subtractExpressionNode = new BinaryExpressionNode(new IntegerConstantNode(0), expressionNodes.pureExpressionNode().get(), BinaryExpressionNode.BinaryExpressionType.SUBTRACTION);
                 yield new NodeSequence(expressionNodes.commands(), subtractExpressionNode);
             }
             case L2Parser.NOT -> {
@@ -121,7 +114,7 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
                 yield new NodeSequence(commands, temporaryVariable);
             }
             case L2Parser.BITNOT -> {
-                BitwiseXorExpressionNode bitwiseXorExpressionNode = new BitwiseXorExpressionNode(new IntegerConstantNode(-1), expressionNodes.pureExpressionNode().get());
+                BinaryExpressionNode bitwiseXorExpressionNode = new BinaryExpressionNode(new IntegerConstantNode(-1), expressionNodes.pureExpressionNode().get(), BinaryExpressionNode.BinaryExpressionType.BITWISE_XOR);
                 yield new NodeSequence(expressionNodes.commands(), bitwiseXorExpressionNode);
             }
             default -> throw new IllegalStateException("Unexpected value: " + unaryOperator(ctx).getSymbol().getType());
@@ -131,24 +124,28 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
     @Override
     public NodeSequence visitBinaryExpression(L2Parser.BinaryExpressionContext ctx) {
         return switch (binaryOperator(ctx).getSymbol().getType()) {
-            case L2Parser.PLUS -> binaryExpressionNodes(ctx, AddExpressionNode.class);
-            case L2Parser.MINUS -> binaryExpressionNodes(ctx, SubtractExpressionNode.class);
-            case L2Parser.TIMES -> binaryExpressionNodes(ctx, MultiplyExpressionNode.class);
-            case L2Parser.DIV -> binaryExpressionNodes(ctx, DivisionExpressionNode.class);
-            case L2Parser.MOD -> binaryExpressionNodes(ctx, ModuloExpressionNode.class);
-            case L2Parser.BITXOR -> binaryExpressionNodes(ctx, BitwiseXorExpressionNode.class);
-            case L2Parser.BITAND -> binaryExpressionNodes(ctx, BitwiseAndExpressionNode.class);
-            case L2Parser.BITOR -> binaryExpressionNodes(ctx, BitwiseOrExpressionNode.class);
-            case L2Parser.SHIFT_LEFT -> binaryExpressionNodes(ctx, ShiftLeftExpressionNode.class);
-            case L2Parser.SHIFT_RIGHT -> binaryExpressionNodes(ctx, ShiftRightExpressionNode.class);
-            case L2Parser.EQ -> binaryExpressionNodes(ctx, EqualExpressionNode.class);
-            case L2Parser.NEQ -> binaryExpressionNodes(ctx, NotEqualExpressionNode.class);
-            case L2Parser.LT -> binaryExpressionNodes(ctx, LessThanExpressionNode.class);
-            case L2Parser.GT -> binaryExpressionNodes(ctx, GreaterThanExpressionNode.class);
-            case L2Parser.GE ->
-                    logicalOrNodes(binaryExpressionNodes(ctx, GreaterThanExpressionNode.class), binaryExpressionNodes(ctx, EqualExpressionNode.class), ctx);
-            case L2Parser.LE ->
-                    logicalOrNodes(binaryExpressionNodes(ctx, LessThanExpressionNode.class), binaryExpressionNodes(ctx, EqualExpressionNode.class), ctx);
+            case L2Parser.PLUS -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.ADDITION);
+            case L2Parser.MINUS ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SUBTRACTION);
+            case L2Parser.TIMES ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.MULTIPLICATION);
+            case L2Parser.DIV -> binaryExpressionNodes(ctx, BinaryAssignmentNode.BinaryExpressionType.DIVISION);
+            case L2Parser.MOD -> binaryExpressionNodes(ctx, BinaryAssignmentNode.BinaryExpressionType.MODULO);
+            case L2Parser.BITXOR ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_XOR);
+            case L2Parser.BITAND ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_AND);
+            case L2Parser.BITOR -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.BITWISE_OR);
+            case L2Parser.SHIFT_LEFT ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SHIFT_LEFT);
+            case L2Parser.SHIFT_RIGHT ->
+                    pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.SHIFT_RIGHT);
+            case L2Parser.EQ -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.EQUAL);
+            case L2Parser.NEQ -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.NOT_EQUAL);
+            case L2Parser.LT -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.LESS_THAN);
+            case L2Parser.GT -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.GREATER_THAN);
+            case L2Parser.GE -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.GREATER_EQUAL);
+            case L2Parser.LE -> pureBinaryExpressionNodes(ctx, BinaryExpressionNode.BinaryExpressionType.LESS_EQUAL);
             case L2Parser.LOGOR -> logicalOrNodes(ctx.left.accept(this), ctx.right.accept(this), ctx);
             case L2Parser.LOGAND -> logicalAndNodes(ctx.left.accept(this), ctx.right.accept(this), ctx);
             default ->
@@ -180,7 +177,8 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
         List<CommandNode> commands = new ArrayList<>();
         commands.addAll(ctx.forDeclaration.accept(this).commands());
         commands.addAll(conditionalExpressionNodes.commands());
-        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
+        BinaryExpressionNode condition = new BinaryExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false), BinaryExpressionNode.BinaryExpressionType.EQUAL);
+        commands.add(new IfNode(condition, new JumpNode(finishLabel)));
 
         commands.add(new LabelNode(loopLabel));
         commands.addAll(ctx.statement().accept(this).commands());
@@ -209,7 +207,8 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
 
         List<CommandNode> commands = new ArrayList<>(conditionalExpressionNodes.commands());
 
-        commands.add(new IfNode(new EqualExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false)), new JumpNode(finishLabel)));
+        BinaryExpressionNode condition = new BinaryExpressionNode(conditionalExpressionNodes.pureExpressionNode().get(), new BooleanConstantNode(false), BinaryExpressionNode.BinaryExpressionType.EQUAL);
+        commands.add(new IfNode(condition, new JumpNode(finishLabel)));
 
         commands.add(new LabelNode(loopLabel));
         commands.addAll(ctx.statement().accept(this).commands());
@@ -351,7 +350,7 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
         return new NodeSequence(commands, temporaryVariable);
     }
 
-    private NodeSequence binaryExpressionNodes(L2Parser.BinaryExpressionContext ctx, Class<? extends BinaryExpressionNode> binaryExpression) {
+    private NodeSequence pureBinaryExpressionNodes(L2Parser.BinaryExpressionContext ctx, BinaryExpressionNode.BinaryExpressionType type) {
         NodeSequence leftExpressionNodes = ctx.left.accept(this);
         NodeSequence rightExpressionNodes = ctx.right.accept(this);
         assert leftExpressionNodes.pureExpressionNode().isPresent() && rightExpressionNodes.pureExpressionNode().isPresent();
@@ -359,43 +358,48 @@ public class IRTreeTranslator extends L2BaseVisitor<NodeSequence> {
         List<CommandNode> commands = new ArrayList<>(leftExpressionNodes.commands());
         commands.addAll(rightExpressionNodes.commands());
 
-        try {
-            BinaryExpressionNode binaryExpressionNode = binaryExpression.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(leftExpressionNodes.pureExpressionNode().get(), rightExpressionNodes.pureExpressionNode().get());
-            Optional<PureExpressionNode> pureExpressionNode = Optional.empty();
 
-            if (binaryExpressionNode instanceof PureExpressionNode) {
-                pureExpressionNode = Optional.of((PureExpressionNode) binaryExpressionNode);
-            } else if (binaryExpressionNode instanceof CommandNode) {
-                VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
-                commands.add(new BinaryAssignmentNode(temporaryVariable, binaryExpressionNode));
-                pureExpressionNode = Optional.of(temporaryVariable);
-            } else {
-                assert false;
-            }
-
-            return new NodeSequence(commands, pureExpressionNode);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            assert false;
-        }
-        return null;
+        BinaryExpressionNode binaryExpressionNode = new BinaryExpressionNode(leftExpressionNodes.pureExpressionNode().get(), rightExpressionNodes.pureExpressionNode().get(), type);
+        return new NodeSequence(commands, binaryExpressionNode);
     }
 
-    private List<CommandNode> binaryAssignmentNodes(L2Parser.AssignmentContext ctx, Class<? extends BinaryExpressionNode> BinaryExpressionNode) {
+    private NodeSequence binaryExpressionNodes(L2Parser.BinaryExpressionContext ctx, BinaryAssignmentNode.BinaryExpressionType type) {
+        NodeSequence leftExpressionNodes = ctx.left.accept(this);
+        NodeSequence rightExpressionNodes = ctx.right.accept(this);
+        assert leftExpressionNodes.pureExpressionNode().isPresent() && rightExpressionNodes.pureExpressionNode().isPresent();
+
+        List<CommandNode> commands = new ArrayList<>(leftExpressionNodes.commands());
+        commands.addAll(rightExpressionNodes.commands());
+
+        VariableNode temporaryVariable = VariableNode.temporary(ctx.hashCode());
+        BinaryAssignmentNode binaryAssignmentNode = new BinaryAssignmentNode(temporaryVariable, leftExpressionNodes.pureExpressionNode().get(), rightExpressionNodes.pureExpressionNode().get(), type);
+        commands.add(binaryAssignmentNode);
+        return new NodeSequence(commands, temporaryVariable);
+    }
+
+    private List<CommandNode> pureBinaryAssignmentNodes(L2Parser.AssignmentContext ctx, BinaryExpressionNode.BinaryExpressionType binaryExpressionType) {
         NodeSequence expressionNodes = ctx.expression().accept(this);
         assert expressionNodes.pureExpressionNode().isPresent();
 
         VariableNode variableNode = new VariableNode(identifier(ctx.leftValue()).getText());
-        BinaryExpressionNode binaryExpressionNode = null;
-        try {
-            binaryExpressionNode = BinaryExpressionNode.getConstructor(PureExpressionNode.class, PureExpressionNode.class).newInstance(variableNode, expressionNodes.pureExpressionNode().get());
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            assert false;
-        }
+        BinaryExpressionNode binaryExpressionNode = new BinaryExpressionNode(variableNode, expressionNodes.pureExpressionNode().get(), binaryExpressionType);
+
 
         List<CommandNode> commands = new ArrayList<>(expressionNodes.commands());
-        commands.add(new BinaryAssignmentNode(variableNode, binaryExpressionNode));
+        commands.add(new AssignmentNode(variableNode, binaryExpressionNode));
+        return commands;
+    }
+
+    private List<CommandNode> binaryAssignmentNodes(L2Parser.AssignmentContext ctx, BinaryAssignmentNode.BinaryExpressionType binaryExpressionType) {
+        NodeSequence expressionNodes = ctx.expression().accept(this);
+        assert expressionNodes.pureExpressionNode().isPresent();
+
+        VariableNode variableNode = new VariableNode(identifier(ctx.leftValue()).getText());
+        BinaryAssignmentNode binaryAssignmentNode = new BinaryAssignmentNode(variableNode, variableNode, expressionNodes.pureExpressionNode().get(), binaryExpressionType);
+
+
+        List<CommandNode> commands = new ArrayList<>(expressionNodes.commands());
+        commands.add(binaryAssignmentNode);
         return commands;
     }
 

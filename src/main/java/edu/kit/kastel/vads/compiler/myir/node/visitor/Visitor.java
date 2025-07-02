@@ -1,33 +1,19 @@
 package edu.kit.kastel.vads.compiler.myir.node.visitor;
 
-import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.IfNode;
-import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
-import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
 import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
-import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ModuloExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.MultiplyExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.block.BasicBlock;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.CallAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IfNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.JumpNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.VariableNode;
 
 import java.util.Collection;
 
@@ -57,62 +43,6 @@ public interface Visitor<T> {
     }
 
     default T visitBooleanConstant(BooleanConstantNode node) {
-        return node.accept(this);
-    }
-
-    default T visitAddExpression(AddExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitSubtractExpression(SubtractExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitMultiplyExpression(MultiplyExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitDivisionExpression(DivisionExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitModuloExpression(ModuloExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitBitwiseAndExpression(BitwiseAndExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitBitwiseOrExpression(BitwiseOrExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitBitwiseXorExpression(BitwiseXorExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitEqualExpression(EqualExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitNotEqualExpression(NotEqualExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitGreaterThanExpression(GreaterThanExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitLessThanExpression(LessThanExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitShiftLeft(ShiftLeftExpressionNode node) {
-        return node.accept(this);
-    }
-
-    default T visitShiftRight(ShiftRightExpressionNode node) {
         return node.accept(this);
     }
 
@@ -148,6 +78,7 @@ public interface Visitor<T> {
         return node.accept(this);
     }
 
-
-
+    default T visitBinaryExpression(BinaryExpressionNode node) {
+        return node.accept(this);
+    }
 }

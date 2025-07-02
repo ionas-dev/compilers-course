@@ -1,5 +1,9 @@
-package edu.kit.kastel.vads.compiler.myir.node;
+package edu.kit.kastel.vads.compiler.myir.node.sealed;
 
+import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
+import edu.kit.kastel.vads.compiler.myir.node.EndNode;
+import edu.kit.kastel.vads.compiler.myir.node.PrimitiveNode;
+import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
 import java.util.List;

@@ -1,5 +1,8 @@
 package edu.kit.kastel.vads.compiler.myir.node;
 
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+
 import java.util.List;
 
 public abstract sealed class ConstantNode<T> implements PureExpressionNode permits BooleanConstantNode, IntegerConstantNode {

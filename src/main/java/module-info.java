@@ -6,4 +6,5 @@ module edu.kit.kastel.vads.compiler {
     requires java.xml;
     requires jdk.jshell;
     requires org.antlr.antlr4.runtime;
+    requires java.desktop;
 }

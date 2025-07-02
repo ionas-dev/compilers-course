@@ -224,4 +224,14 @@ public class TypeAnalysis extends L2BaseVisitor<OptionalInt> {
     public OptionalInt visitBooleanConstant(L2Parser.BooleanConstantContext ctx) {
         return OptionalInt.of(L2Parser.BOOL);
     }
+
+    @Override
+    public OptionalInt visitIf(L2Parser.IfContext ctx) {
+        OptionalInt expressionType = ctx.expression().accept(this);
+        if (expressionType.isEmpty() || expressionType.getAsInt() != L2Parser.BOOL) {
+            throw new SemanticException("if expression does not match type bool");
+        }
+        return OptionalInt.empty();
+    }
+
 }

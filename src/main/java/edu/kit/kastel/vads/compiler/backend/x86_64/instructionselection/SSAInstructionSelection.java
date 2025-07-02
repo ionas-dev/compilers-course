@@ -19,44 +19,29 @@ import edu.kit.kastel.vads.compiler.backend.x86_64.statement.SignedMultiplyInstr
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.TestInstruction;
 import edu.kit.kastel.vads.compiler.backend.x86_64.statement.X86Statement;
 import edu.kit.kastel.vads.compiler.backend.x86_64.util.Condition;
-import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.ConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.IfNode;
-import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
-import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
 import edu.kit.kastel.vads.compiler.myir.node.Node;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ModuloExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.MultiplyExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.block.BasicBlock;
-import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.CallAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IfNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.JumpNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.VariableNode;
+import edu.kit.kastel.vads.compiler.myir.node.visitor.CommandVisitor;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SSAInstructionSelection implements Visitor<List<X86Statement>> {
+public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> {
 
     private final Map<VariableNode, Operand> registers = new HashMap<>();
     private int registerCounter = 0;
@@ -113,112 +98,62 @@ public class SSAInstructionSelection implements Visitor<List<X86Statement>> {
         Operand targetOperand = getOperand(node.variable());
 
         return switch (node.expression()) {
-            case ConstantNode<?> expressionNode -> List.of(new MoveInstruction(getOperand(expressionNode), targetOperand, BitSize.BIT32));
-            case VariableNode expressionNode -> List.of(new MoveInstruction(getOperand(expressionNode), targetOperand, BitSize.BIT32));
-            case BinaryExpressionNode binaryExpressionNode -> getBinaryAssignmentInstructions(binaryExpressionNode, targetOperand);
+            case ConstantNode<?> expressionNode ->
+                    List.of(new MoveInstruction(getOperand(expressionNode), targetOperand, BitSize.BIT32));
+            case VariableNode expressionNode ->
+                    List.of(new MoveInstruction(getOperand(expressionNode), targetOperand, BitSize.BIT32));
+            case BinaryExpressionNode binaryExpressionNode -> {
+                Operand leftOperand = getOperand(binaryExpressionNode.left());
+                Operand rightOperand = getOperand(binaryExpressionNode.right());
+
+                yield switch (binaryExpressionNode.type()) {
+                    case ADDITION ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.ADD);
+                    case SUBTRACTION ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SUB);
+                    case SHIFT_RIGHT ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SHIFT_RIGHT);
+                    case SHIFT_LEFT ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SHIFT_LEFT);
+                    case BITWISE_OR ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.OR);
+                    case BITWISE_XOR ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.XOR);
+                    case BITWISE_AND ->
+                            getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.AND);
+                    case MULTIPLICATION -> getMultiplyInstructions(leftOperand, rightOperand, targetOperand);
+                    case GREATER_THAN ->
+                            getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.GREATER);
+                    case LESS_THAN -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.LESS);
+                    case GREATER_EQUAL ->
+                            getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.GREATER_EQUALS);
+                    case LESS_EQUAL ->
+                            getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.LESS_EQUALS);
+                    case EQUAL -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.EQUALS);
+                    case NOT_EQUAL ->
+                            getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.NOT_EQUALS);
+                };
+            }
         };
     }
 
     @Override
     public List<X86Statement> visitBinaryAssignment(BinaryAssignmentNode node) {
         Operand targetOperand = getOperand(node.variableNode());
+        Operand leftOperand = getOperand(node.leftExpression());
+        Operand rightOperand = getOperand(node.rightExpression());
 
-        return getBinaryAssignmentInstructions(node.binaryExpressionNode(), targetOperand);
+        return switch (node.binaryExpressionType()) {
+            case DIVISION ->
+                    getDivisionInstructions(leftOperand, rightOperand, targetOperand);
+            case MODULO ->
+                    getModuloInstructions(leftOperand, rightOperand, targetOperand);
+        };
     }
 
     @Override
     public List<X86Statement> visitCallAssignment(CallAssignmentNode node) {
         // TODO: Implement
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitBasicBlock(BasicBlock node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitAddExpression(AddExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitSubtractExpression(SubtractExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitShiftRight(ShiftRightExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitShiftLeft(ShiftLeftExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitBitwiseOrExpression(BitwiseOrExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitBitwiseAndExpression(BitwiseAndExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitBitwiseXorExpression(BitwiseXorExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitMultiplyExpression(MultiplyExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitDivisionExpression(DivisionExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitModuloExpression(ModuloExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitGreaterThanExpression(GreaterThanExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitLessThanExpression(LessThanExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitEqualExpression(EqualExpressionNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitNotEqualExpression(NotEqualExpressionNode node) {
-        assert false;
         return List.of();
     }
 
@@ -238,28 +173,6 @@ public class SSAInstructionSelection implements Visitor<List<X86Statement>> {
     public List<X86Statement> visitVariable(VariableNode node) {
         assert false;
         return List.of();
-    }
-
-    private List<X86Statement> getBinaryAssignmentInstructions(BinaryExpressionNode binaryExpressionNode, Operand targetOperand) {
-        Operand leftOperand = getOperand(binaryExpressionNode.left());
-        Operand rightOperand = getOperand(binaryExpressionNode.right());
-
-        return switch (binaryExpressionNode) {
-            case AddExpressionNode addExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.ADD);
-            case SubtractExpressionNode subtractExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SUB);
-            case ShiftRightExpressionNode shiftRightExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SHIFT_RIGHT);
-            case ShiftLeftExpressionNode shiftLeftExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.SHIFT_LEFT);
-            case BitwiseOrExpressionNode bitwiseOrExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.OR);
-            case BitwiseXorExpressionNode bitwiseXorExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.XOR);
-            case BitwiseAndExpressionNode bitwiseAndExpressionNode -> getInstructions(leftOperand, rightOperand, targetOperand, BinaryOperationInstruction.Operation.AND);
-            case MultiplyExpressionNode multiplyExpressionNode -> getMultiplyInstructions(leftOperand, rightOperand, targetOperand);
-            case GreaterThanExpressionNode greaterThanExpressionNode -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.GREATER);
-            case LessThanExpressionNode lessThanExpressionNode -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.LESS);
-            case EqualExpressionNode equalExpressionNode -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.EQUALS);
-            case NotEqualExpressionNode notEqualExpressionNode -> getCompareInstructions(leftOperand, rightOperand, targetOperand, Condition.NOT_EQUALS);
-            case DivisionExpressionNode divisionExpressionNode -> getDivisionInstructions(leftOperand, rightOperand, targetOperand);
-            case ModuloExpressionNode moduloExpressionNode -> getModuloInstructions(leftOperand, rightOperand, targetOperand);
-        };
     }
 
     private List<X86Statement> getInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand, BinaryOperationInstruction.Operation operation) {

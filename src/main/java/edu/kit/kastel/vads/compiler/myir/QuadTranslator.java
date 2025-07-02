@@ -1,129 +1,61 @@
 package edu.kit.kastel.vads.compiler.myir;
 
-import edu.kit.kastel.vads.compiler.myir.node.AssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BinaryAssignmentNode;
-import edu.kit.kastel.vads.compiler.myir.node.BooleanConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.CallAssignmentNode;
 import edu.kit.kastel.vads.compiler.myir.node.CommandNode;
-import edu.kit.kastel.vads.compiler.myir.node.IfNode;
-import edu.kit.kastel.vads.compiler.myir.node.IntegerConstantNode;
-import edu.kit.kastel.vads.compiler.myir.node.JumpNode;
-import edu.kit.kastel.vads.compiler.myir.node.LabelNode;
 import edu.kit.kastel.vads.compiler.myir.node.ProgramNode;
 import edu.kit.kastel.vads.compiler.myir.node.PureExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.ReturnNode;
-import edu.kit.kastel.vads.compiler.myir.node.VariableNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.AddExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BinaryExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseAndExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseOrExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.BitwiseXorExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.DivisionExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.EqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.GreaterThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.LessThanExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ModuloExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.MultiplyExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.NotEqualExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftLeftExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.ShiftRightExpressionNode;
-import edu.kit.kastel.vads.compiler.myir.node.binop.SubtractExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.AssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BinaryExpressionNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.BooleanConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.CallAssignmentNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IfNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.IntegerConstantNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.JumpNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.LabelNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.ReturnNode;
+import edu.kit.kastel.vads.compiler.myir.node.sealed.VariableNode;
 import edu.kit.kastel.vads.compiler.myir.node.visitor.Visitor;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class QuadTranslator implements Visitor<NodeSequence> {
 
     public static ProgramNode translate(ProgramNode program) {
-        ProgramNode program1 = new ProgramNode(program.accept(new QuadTranslator()).commands());
-        return program1;
+        return new ProgramNode(program.accept(new QuadTranslator()).commands());
     }
 
     @Override
     public NodeSequence visitIntegerConstant(IntegerConstantNode node) {
-        return visitPureExpression(node);
+        return new NodeSequence(node);
     }
 
     @Override
     public NodeSequence visitBooleanConstant(BooleanConstantNode node) {
-        return visitPureExpression(node);
+        return new NodeSequence(node);
     }
 
     @Override
     public NodeSequence visitVariable(VariableNode node) {
-        return visitPureExpression(node);
+        return new NodeSequence(node);
     }
 
     @Override
-    public NodeSequence visitAddExpression(AddExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
+    public NodeSequence visitBinaryExpression(BinaryExpressionNode node) {
+        NodeSequence leftNodes =  node.left().accept(this);
+        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
+        assert leftNodes.pureExpressionNode().isPresent();
+        leftNodes = temporarilyAssignIfBinaryExpression(leftNodes.pureExpressionNode().get());
+        commands.addAll(leftNodes.commands());
 
-    @Override
-    public NodeSequence visitBitwiseAndExpression(BitwiseAndExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
+        NodeSequence rightNodes = node.right().accept(this);
+        commands.addAll(rightNodes.commands());
+        assert rightNodes.pureExpressionNode().isPresent();
+        rightNodes = temporarilyAssignIfBinaryExpression(rightNodes.pureExpressionNode().get());
+        commands.addAll(rightNodes.commands());
 
-    @Override
-    public NodeSequence visitBitwiseOrExpression(BitwiseOrExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitBitwiseXorExpression(BitwiseXorExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitEqualExpression(EqualExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitGreaterThanExpression(GreaterThanExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitLessThanExpression(LessThanExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitMultiplyExpression(MultiplyExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitNotEqualExpression(NotEqualExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitShiftLeft(ShiftLeftExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitShiftRight(ShiftRightExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitSubtractExpression(SubtractExpressionNode node) {
-        return visitPureBinaryExpression(node);
-    }
-
-    @Override
-    public NodeSequence visitDivisionExpression(DivisionExpressionNode node) {
-        return visitBinaryExpressionCommand(node);
-    }
-
-    @Override
-    public NodeSequence visitModuloExpression(ModuloExpressionNode node) {
-       return visitBinaryExpressionCommand(node);
+        BinaryExpressionNode binaryExpressionNode = new BinaryExpressionNode(leftNodes.pureExpressionNode().get(), rightNodes.pureExpressionNode().get(), node.type());
+        return new NodeSequence(commands, binaryExpressionNode);
     }
 
     @Override
@@ -138,15 +70,19 @@ public class QuadTranslator implements Visitor<NodeSequence> {
 
     @Override
     public NodeSequence visitBinaryAssignment(BinaryAssignmentNode node) {
-        NodeSequence nodes = node.binaryExpressionNode().accept(this);
-        List<CommandNode> commands = new ArrayList<>(nodes.commands());
-        if (nodes.pureExpressionNode().isPresent()) {
-            commands.add(new AssignmentNode(node.variableNode(), nodes.pureExpressionNode().get()));
-        } else {
-            assert !nodes.commands().isEmpty() && nodes.commands().getLast() instanceof BinaryExpressionNode;
-            commands.add(new BinaryAssignmentNode(node.variableNode(), (BinaryExpressionNode) nodes.commands().getLast()));
-        }
+        NodeSequence leftNodes = node.leftExpression().accept(this);
+        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
+        assert leftNodes.pureExpressionNode().isPresent();
+        leftNodes = temporarilyAssignIfBinaryExpression(leftNodes.pureExpressionNode().get());
+        commands.addAll(leftNodes.commands());
 
+        NodeSequence rightNodes = node.rightExpression().accept(this);
+        commands.addAll(rightNodes.commands());
+        assert rightNodes.pureExpressionNode().isPresent();
+        rightNodes = temporarilyAssignIfBinaryExpression(rightNodes.pureExpressionNode().get());
+        commands.addAll(rightNodes.commands());
+
+        commands.add(new BinaryAssignmentNode(node.variableNode(), leftNodes.pureExpressionNode().get(), rightNodes.pureExpressionNode().get(), node.binaryExpressionType()));
         return new NodeSequence(commands);
     }
 
@@ -168,7 +104,8 @@ public class QuadTranslator implements Visitor<NodeSequence> {
 
     @Override
     public NodeSequence visitCallAssignment(CallAssignmentNode node) {
-        List<NodeSequence> nodeSequences = node.parameters().stream().map(this::visitPureExpression).toList();
+        List<NodeSequence> nodeSequences = node.parameters().stream()
+                .map(x -> x.accept(this)).toList();
 
         List<CommandNode> commands = new ArrayList<>();
         List<PureExpressionNode> parameters = new ArrayList<>();
@@ -196,9 +133,12 @@ public class QuadTranslator implements Visitor<NodeSequence> {
     @Override
     public NodeSequence visitReturn(ReturnNode node) {
         NodeSequence nodes = node.expression().accept(this);
-        assert nodes.pureExpressionNode().isPresent();
-
         List<CommandNode> commands = new ArrayList<>(nodes.commands());
+
+        assert nodes.pureExpressionNode().isPresent();
+        nodes =  temporarilyAssignIfBinaryExpression(nodes.pureExpressionNode().get());
+        commands.addAll(nodes.commands());
+
         commands.add(new ReturnNode(nodes.pureExpressionNode().get()));
 
         return new NodeSequence(commands);
@@ -216,54 +156,14 @@ public class QuadTranslator implements Visitor<NodeSequence> {
         return new NodeSequence(commands);
     }
 
-    public <T extends BinaryExpressionNode & CommandNode> NodeSequence visitBinaryExpressionCommand(T node) {
-        NodeSequence leftNodes = node.left().accept(this);
-        assert leftNodes.pureExpressionNode().isPresent();
+    private NodeSequence temporarilyAssignIfBinaryExpression(PureExpressionNode node) {
+        if (node instanceof BinaryExpressionNode binaryExpressionNode) {
+            VariableNode temporaryVariable = VariableNode.temporary(binaryExpressionNode.hashCode());
+            AssignmentNode assignment = new AssignmentNode(temporaryVariable, binaryExpressionNode);
+            return new NodeSequence(List.of(assignment), temporaryVariable);
 
-        NodeSequence rightNodes = node.left().accept(this);
-        assert rightNodes.pureExpressionNode().isPresent();
-
-        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
-        commands.addAll(rightNodes.commands());
-        try {
-            commands.add((CommandNode) node.getClass()
-                    .getConstructor(PureExpressionNode.class, PureExpressionNode.class)
-                    .newInstance(leftNodes.pureExpressionNode().get(), rightNodes.pureExpressionNode().get()));
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            assert false;
+        } else {
+            return new NodeSequence(node);
         }
-
-        return new NodeSequence(commands);
-    }
-
-    public <T extends BinaryExpressionNode & PureExpressionNode> NodeSequence visitPureBinaryExpression(T node) {
-        PureExpressionNode pureBinaryExpressionNode = node;
-        NodeSequence leftNodes =  node.left().accept(this);
-        NodeSequence rightNodes = node.right().accept(this);
-
-        List<CommandNode> commands = new ArrayList<>(leftNodes.commands());
-        commands.addAll(rightNodes.commands());
-
-        assert leftNodes.pureExpressionNode().isPresent();
-        assert rightNodes.pureExpressionNode().isPresent();
-
-        VariableNode temporaryVariableNode = VariableNode.temporary(node.hashCode());
-        try {
-            pureBinaryExpressionNode = (PureExpressionNode) node.getClass()
-                    .getConstructor(PureExpressionNode.class, PureExpressionNode.class)
-                    .newInstance(leftNodes.pureExpressionNode().get(), rightNodes.pureExpressionNode().get());
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            assert false;
-        }
-        AssignmentNode assignmentNode = new AssignmentNode(temporaryVariableNode, pureBinaryExpressionNode);
-        commands.add(assignmentNode);
-        return new NodeSequence(commands, temporaryVariableNode);
-    }
-
-    public NodeSequence visitPureExpression(PureExpressionNode node) {
-        if (node instanceof BinaryExpressionNode) {
-            return node.accept(this);
-        }
-        return new NodeSequence(node);
     }
 }
