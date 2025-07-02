@@ -157,24 +157,6 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
         return List.of();
     }
 
-    @Override
-    public List<X86Statement> visitBooleanConstant(BooleanConstantNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitIntegerConstant(IntegerConstantNode node) {
-        assert false;
-        return List.of();
-    }
-
-    @Override
-    public List<X86Statement> visitVariable(VariableNode node) {
-        assert false;
-        return List.of();
-    }
-
     private List<X86Statement> getInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand, BinaryOperationInstruction.Operation operation) {
         return List.of(
                 new MoveInstruction(leftOperand, targetOperand, BitSize.BIT32),
@@ -183,14 +165,12 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
     }
 
     private List<X86Statement> getModuloInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand) {
-        Operand temporaryOperand = new VirtualOperand(registerCounter++);
-
         return List.of(
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
                 new SignExtendInstruction(),
-                new MoveInstruction(rightOperand, temporaryOperand, BitSize.BIT32),
-                new SignedDivisionInstruction(temporaryOperand, BitSize.BIT32),
+                new MoveInstruction(rightOperand,  Register.BASE, BitSize.BIT32),
+                new SignedDivisionInstruction( Register.BASE, BitSize.BIT32),
                 new MoveInstruction(Register.DATA, Register.ACCUMULATOR, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
@@ -198,14 +178,12 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
     }
 
     private List<X86Statement> getDivisionInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand) {
-        Operand temporaryOperand = new VirtualOperand(registerCounter++);
-
         return List.of(
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
                 new SignExtendInstruction(),
-                new MoveInstruction(rightOperand, temporaryOperand, BitSize.BIT32),
-                new SignedDivisionInstruction(temporaryOperand, BitSize.BIT32),
+                new MoveInstruction(rightOperand, Register.BASE, BitSize.BIT32),
+                new SignedDivisionInstruction(Register.BASE, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
         );

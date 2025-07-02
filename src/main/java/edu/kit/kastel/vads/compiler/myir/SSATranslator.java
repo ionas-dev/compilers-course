@@ -69,7 +69,7 @@ public class SSATranslator implements Visitor<Node> {
     @Override
     public Node visitBinaryAssignment(BinaryAssignmentNode node) {
         int assignedVariableCount = getCount(node.variableNode());
-        VariableNode assignedVariable = new VariableNode(node.variableNode().name() + "_" + assignedVariableCount + 1);
+        VariableNode assignedVariable = new VariableNode(node.variableNode().name() + "_" + (assignedVariableCount + 1));
 
         PureExpressionNode leftExpression = visitRightSidePureExpression(node.leftExpression());
         PureExpressionNode rightExpression = visitRightSidePureExpression(node.rightExpression());
@@ -82,7 +82,7 @@ public class SSATranslator implements Visitor<Node> {
     @Override
     public Node visitCallAssignment(CallAssignmentNode node) {
         int assignedVariableCount = getCount(node.variable());
-        VariableNode assignedVariable = new VariableNode(node.variable().name() + "_" + assignedVariableCount + 1);
+        VariableNode assignedVariable = new VariableNode(node.variable().name() + "_" + (assignedVariableCount + 1));
 
         List<PureExpressionNode> parameters = node.parameters().stream()
                 .map(this::visitRightSidePureExpression)

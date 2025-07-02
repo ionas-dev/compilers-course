@@ -9,23 +9,16 @@ import java.util.List;
 public final class ProgramNode implements Node {
     private final List<CommandNode> children;
     private final LabelNode start;
-    private final ReturnNode end;
 
     public ProgramNode(List<CommandNode> children) {
         this.children = children;
         assert !children.isEmpty() && children.getFirst() instanceof LabelNode;
-        assert !children.isEmpty() && children.getLast() instanceof ReturnNode;
 
         this.start = (LabelNode) children.getFirst();
-        this.end = (ReturnNode) children.getLast();
     }
 
     public LabelNode start() {
         return start;
-    }
-
-    public ReturnNode end() {
-        return end;
     }
 
     @Override
