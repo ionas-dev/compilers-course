@@ -38,6 +38,10 @@ public class BasicBlockTranslator implements Visitor<Collection<BasicBlock>> {
                 commands.add(commandNode);
                 basicBlocks.add(new BasicBlock(commands));
             } else {
+                if (!started) {
+                    continue;
+                }
+
                 startedBlockCommands.getLast().add(commandNode);
             }
         }
