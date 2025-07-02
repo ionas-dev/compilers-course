@@ -199,7 +199,8 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
                 new SignExtendInstruction(),
-                new SignedDivisionInstruction(rightOperand, BitSize.BIT32),
+                new MoveInstruction(rightOperand, Register.DATA, BitSize.BIT32),
+                new SignedDivisionInstruction(Register.DATA, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
         );
@@ -209,7 +210,8 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
         return List.of(
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
-                new SignedMultiplyInstruction(rightOperand, BitSize.BIT32),
+                new MoveInstruction(rightOperand, Register.DATA, BitSize.BIT32),
+                new SignedMultiplyInstruction(Register.DATA, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
         );
