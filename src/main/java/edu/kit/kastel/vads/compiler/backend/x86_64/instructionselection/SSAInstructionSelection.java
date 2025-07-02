@@ -183,11 +183,14 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
     }
 
     private List<X86Statement> getModuloInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand) {
+        Operand temporaryOperand = new VirtualOperand(registerCounter++);
+
         return List.of(
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
                 new SignExtendInstruction(),
-                new SignedDivisionInstruction(rightOperand, BitSize.BIT32),
+                new MoveInstruction(rightOperand, temporaryOperand, BitSize.BIT32),
+                new SignedDivisionInstruction(temporaryOperand, BitSize.BIT32),
                 new MoveInstruction(Register.DATA, Register.ACCUMULATOR, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
@@ -195,12 +198,14 @@ public class SSAInstructionSelection extends CommandVisitor<List<X86Statement>> 
     }
 
     private List<X86Statement> getDivisionInstructions(Operand leftOperand, Operand rightOperand, Operand targetOperand) {
+        Operand temporaryOperand = new VirtualOperand(registerCounter++);
+
         return List.of(
                 new MoveInstruction(Register.DATA, targetOperand, BitSize.BIT32),
                 new MoveInstruction(leftOperand, Register.ACCUMULATOR, BitSize.BIT32),
                 new SignExtendInstruction(),
-                new MoveInstruction(rightOperand, Register.DATA, BitSize.BIT32),
-                new SignedDivisionInstruction(Register.DATA, BitSize.BIT32),
+                new MoveInstruction(rightOperand, temporaryOperand, BitSize.BIT32),
+                new SignedDivisionInstruction(temporaryOperand, BitSize.BIT32),
                 new MoveInstruction(targetOperand, Register.DATA, BitSize.BIT32),
                 new MoveInstruction(Register.ACCUMULATOR, targetOperand, BitSize.BIT32)
         );
